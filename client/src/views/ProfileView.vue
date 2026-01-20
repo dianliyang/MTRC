@@ -36,17 +36,18 @@
       </div>
 
       <!-- Action Footer -->
-      <div class="flex flex-col sm:flex-row justify-center gap-4">
+      <div class="flex flex-col items-center gap-6">
         <button 
           @click="logout"
-          class="px-8 py-3 rounded-full border border-charcoal/10 text-charcoal/40 text-[10px] uppercase tracking-widest font-bold hover:bg-charcoal/5 transition-all"
+          class="px-12 py-4 rounded-full bg-charcoal text-sand text-[11px] uppercase tracking-[0.2em] font-bold hover:bg-accent transition-all shadow-lg"
         >
           Sign Out of Session
         </button>
+        
         <button 
           @click="deleteAccount"
           :disabled="deleting"
-          class="px-8 py-3 rounded-full border border-red-100 text-red-400 text-[10px] uppercase tracking-widest font-bold hover:bg-red-50 transition-all disabled:opacity-30"
+          class="text-[9px] uppercase tracking-[0.3em] font-bold text-red-400/40 hover:text-red-500 transition-colors disabled:opacity-30"
         >
           {{ deleting ? 'Deactivating...' : 'Delete My Account' }}
         </button>
