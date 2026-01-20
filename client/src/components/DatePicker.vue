@@ -147,9 +147,12 @@ span.flatpickr-weekday {
   border-top: 1px solid rgba(44, 44, 44, 0.08) !important;
   height: auto !important;
   line-height: 40px !important;
-  padding: 12px 0 4px 0 !important;
+  padding: 12px 10px 4px 10px !important;
   background: rgba(44, 44, 44, 0.02);
   border-radius: 0 0 20px 24px;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
 }
 
 .flatpickr-time input {
@@ -159,15 +162,16 @@ span.flatpickr-weekday {
   background: transparent !important;
   border-radius: 8px !important;
   padding: 4px 0 !important;
+  text-align: center !important;
 }
 
 .flatpickr-time .numInputWrapper {
   height: 40px !important;
-  flex: 1;
+  flex: 0 1 60px !important; /* Fixed width for inputs to ensure centering */
 }
 
 .flatpickr-time .numInputWrapper span {
-  display: none !important; /* Hide the up/down arrows */
+  display: none !important;
 }
 
 .flatpickr-time .flatpickr-time-separator {
@@ -175,6 +179,8 @@ span.flatpickr-weekday {
   font-size: 1.2rem;
   display: flex;
   align-items: center;
+  justify-content: center;
+  width: 20px;
   opacity: 0.2;
 }
 
@@ -189,6 +195,8 @@ span.flatpickr-weekday {
   border-radius: 8px !important;
   transition: all 0.2s ease;
   cursor: pointer;
+  flex: 0 0 60px !important; /* Fixed width for toggle */
+  margin-left: 10px;
 }
 
 .flatpickr-am-pm:hover {
