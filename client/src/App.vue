@@ -1,5 +1,32 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
+import { ref, onMounted, watch } from 'vue'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
+
+const route = useRoute();
+const currentUser = ref<any>(null);
+const showUserMenu = ref(false);
+
+const updateUserInfo = () => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    currentUser.value = JSON.parse(userStr);
+  } else {
+    currentUser.value = null;
+  }
+};
+
+onMounted(updateUserInfo);
+
+// Watch for route changes to update user info (e.g. after login)
+watch(() => route.path, updateUserInfo);
+
+const logout = () => {
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('user');
+  currentUser.value = null;
+  showUserMenu.value = false;
+  window.location.href = '/login';
+};
 </script>
 
 <template>
@@ -16,44 +43,72 @@ import { RouterLink, RouterView } from 'vue-router'
           </RouterLink>
         </div>
 
-        <!-- Desktop Navigation -->
-        <div class="hidden md:flex items-center gap-8 pointer-events-auto bg-white/40 backdrop-blur-xl border border-white/20 rounded-full px-8 py-4 shadow-sm">
-          <RouterLink 
-            to="/" 
-            class="relative text-[11px] uppercase tracking-[0.2em] font-semibold transition-all duration-300 group text-charcoal/30 hover:text-charcoal"
-            active-class=""
-            exact-active-class="!text-charcoal is-active"
-          >
-            <span>Journal</span>
-            <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-accent rounded-full scale-0 transition-transform duration-300 group-[.is-active]:scale-100"></div>
-          </RouterLink>
-          
-          <RouterLink 
-            to="/library" 
-            class="relative text-[11px] uppercase tracking-[0.2em] font-semibold transition-all duration-300 group text-charcoal/30 hover:text-charcoal"
-            active-class="!text-charcoal is-active"
-          >
-            <span>Library</span>
-            <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-accent rounded-full scale-0 transition-transform duration-300 group-[.is-active]:scale-100"></div>
-          </RouterLink>
+        <!-- Desktop Navigation & Profile -->
+        <div class="hidden md:flex items-center gap-4 pointer-events-auto">
+          <div class="flex items-center gap-8 bg-white/40 backdrop-blur-xl border border-white/20 rounded-full px-8 py-4 shadow-sm">
+            <RouterLink 
+              to="/" 
+              class="relative text-[11px] uppercase tracking-[0.2em] font-semibold transition-all duration-300 group text-charcoal/30 hover:text-charcoal"
+              active-class=""
+              exact-active-class="!text-charcoal is-active"
+            >
+              <span>Journal</span>
+              <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-accent rounded-full scale-0 transition-transform duration-300 group-[.is-active]:scale-100"></div>
+            </RouterLink>
+            
+            <RouterLink 
+              to="/library" 
+              class="relative text-[11px] uppercase tracking-[0.2em] font-semibold transition-all duration-300 group text-charcoal/30 hover:text-charcoal"
+              active-class="!text-charcoal is-active"
+            >
+              <span>Library</span>
+              <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-accent rounded-full scale-0 transition-transform duration-300 group-[.is-active]:scale-100"></div>
+            </RouterLink>
 
-          <RouterLink 
-            to="/gatherings" 
-            class="relative text-[11px] uppercase tracking-[0.2em] font-semibold transition-all duration-300 group text-charcoal/30 hover:text-charcoal"
-            active-class="!text-charcoal is-active"
-          >
-            <span>Gatherings</span>
-            <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-accent rounded-full scale-0 transition-transform duration-300 group-[.is-active]:scale-100"></div>
-          </RouterLink>
+            <RouterLink 
+              to="/gatherings" 
+              class="relative text-[11px] uppercase tracking-[0.2em] font-semibold transition-all duration-300 group text-charcoal/30 hover:text-charcoal"
+              active-class="!text-charcoal is-active"
+            >
+              <span>Gatherings</span>
+              <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-accent rounded-full scale-0 transition-transform duration-300 group-[.is-active]:scale-100"></div>
+            </RouterLink>
 
-          <RouterLink 
-            to="/admin" 
-            class="relative text-[11px] uppercase tracking-[0.2em] font-semibold transition-all duration-300 group text-charcoal/30 hover:text-charcoal"
-            active-class="!text-charcoal is-active"
-          >
-            <span>Curator</span>
-            <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-accent rounded-full scale-0 transition-transform duration-300 group-[.is-active]:scale-100"></div>
-          </RouterLink>
+            <RouterLink 
+              to="/admin" 
+              class="relative text-[11px] uppercase tracking-[0.2em] font-semibold transition-all duration-300 group text-charcoal/30 hover:text-charcoal"
+              active-class="!text-charcoal is-active"
+            >
+              <span>Curator</span>
+              <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-accent rounded-full scale-0 transition-transform duration-300 group-[.is-active]:scale-100"></div>
+            </RouterLink>
+          </div>
+
+          <!-- User Profile Icon -->
+          <div v-if="currentUser" class="relative">
+            <button 
+              @click="showUserMenu = !showUserMenu"
+              class="w-12 h-12 rounded-full bg-white/40 backdrop-blur-xl border border-white/20 flex items-center justify-center text-xs font-bold text-charcoal/60 hover:bg-white/60 transition-all shadow-sm"
+            >
+              {{ currentUser.name?.[0].toUpperCase() || 'U' }}
+            </button>
+
+            <!-- Dropdown Menu -->
+            <transition name="fade">
+              <div v-if="showUserMenu" class="absolute right-0 mt-4 w-48 bg-white/90 backdrop-blur-2xl border border-white/20 rounded-2xl shadow-2xl p-4 z-[60]">
+                <div class="mb-4 pb-4 border-b border-charcoal/5">
+                  <p class="text-[10px] uppercase tracking-widest font-bold text-charcoal/40 mb-1">{{ currentUser.role }}</p>
+                  <p class="text-sm font-serif font-bold text-charcoal truncate">{{ currentUser.name }}</p>
+                </div>
+                <button 
+                  @click="logout"
+                  class="w-full text-left text-[10px] uppercase tracking-widest font-bold text-red-400 hover:text-red-600 transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </transition>
+          </div>
         </div>
       </div>
     </nav>
