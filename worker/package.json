@@ -4,15 +4,16 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "generate": "drizzle-kit generate",
-    "migrate": "wrangler d1 migrations apply DB"
+    "migrate": "wrangler d1 migrations apply morethan-db --remote"
   },
   "dependencies": {
-    "hono": "^4.0.0",
-    "drizzle-orm": "^0.29.3"
+    "drizzle-orm": "^0.45.1",
+    "hono": "^4.0.0"
   },
   "devDependencies": {
-    "wrangler": "^3.0.0",
-    "drizzle-kit": "^0.20.14",
-    "@cloudflare/workers-types": "^4.20240208.0"
+    "@cloudflare/workers-types": "^4.20240208.0",
+    "drizzle-kit": "^0.31.8",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.59.3"
   }
 }

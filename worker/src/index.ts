@@ -1,11 +1,13 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { jwt, sign } from 'hono/jwt';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq, desc, or, and } from 'drizzle-orm';
 import * as schema from './schema';
 
 type Bindings = {
   DB: D1Database;
+  JWT_SECRET: string;
   SIGNAL_API_URL?: string;
   SIGNAL_SENDER_NUMBER?: string;
 };
@@ -21,9 +23,37 @@ app.use('*', cors({
   credentials: true,
 }));
 
+// Auth Middleware for protected routes
+const authMiddleware = async (c: any, next: any) => {
+  const jwtMiddleware = jwt({
+    secret: c.env.JWT_SECRET || 'fallback_secret',
+    alg: 'HS256',
+  });
+  return jwtMiddleware(c, next);
+};
+
+// Protect specific routes
+app.use('/api/books', async (c, next) => {
+  if (c.req.method === 'POST') return authMiddleware(c, next);
+  await next();
+});
+app.use('/api/books/*', async (c, next) => {
+  if (c.req.method === 'DELETE' || c.req.path.includes('/select')) return authMiddleware(c, next);
+  await next();
+});
+app.use('/api/meetings', async (c, next) => {
+  if (c.req.method === 'POST') return authMiddleware(c, next);
+  await next();
+});
+app.use('/api/meetings/*', async (c, next) => {
+  if (c.req.method === 'DELETE') return authMiddleware(c, next);
+  await next();
+});
+
 // Helper: Get DB instance
 const getDB = (c: any) => drizzle(c.env.DB, { schema });
 
+// ... (Rest of Helpers: sendSignalMessage, sendEmail) ...
 // Helper: Send Signal Message
 async function sendSignalMessage(env: Bindings, recipientNumber: string, message: string) {
   const url = env.SIGNAL_API_URL || 'http://localhost:8080';
@@ -66,6 +96,8 @@ app.get('/api/books', async (c) => {
 app.post('/api/books', async (c) => {
   const db = getDB(c);
   const body = await c.req.json();
+  const payload = c.get('jwtPayload'); // From middleware
+  const userId = payload ? String(payload.id) : body.suggesterId;
   
   // Check if exists
   const existing = await db.query.books.findFirst({
@@ -83,7 +115,7 @@ app.post('/api/books', async (c) => {
     language: body.language,
     pageCount: body.pageCount,
     publishedDate: body.publishedDate,
-    suggesterId: body.suggesterId,
+    suggesterId: userId,
     createdAt: new Date(),
     updatedAt: new Date(),
   }).returning().get();
@@ -338,7 +370,11 @@ app.post('/api/register', async (c) => {
       updatedAt: new Date()
     }).returning().get();
 
-    return c.json({ id: user.id, name: user.name, email: user.email });
+    // Generate JWT
+    const secret = c.env.JWT_SECRET || 'fallback_secret';
+    const token = await sign({ id: user.id, email: user.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 }, secret);
+
+    return c.json({ id: user.id, name: user.name, email: user.email, token });
   } catch (e) {
     return c.json({ error: 'Registration failed' }, 400);
   }
@@ -360,7 +396,12 @@ app.post('/api/login', async (c) => {
   });
 
   if (!user) return c.json({ error: 'Invalid credentials' }, 401);
-  return c.json({ id: user.id, name: user.name, email: user.email });
+
+  // Generate JWT
+  const secret = c.env.JWT_SECRET || 'fallback_secret';
+  const token = await sign({ id: user.id, email: user.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 }, secret);
+
+  return c.json({ id: user.id, name: user.name, email: user.email, token });
 });
 
 

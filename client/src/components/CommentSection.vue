@@ -15,7 +15,7 @@
           class="bg-transparent text-sm border-b border-charcoal/10 py-2 w-1/3 focus:outline-none focus:border-accent transition-colors placeholder:text-charcoal/30" 
         />
         <textarea 
-          v-model="text" 
+          v-model="newComment" 
           class="w-full bg-transparent border-b border-charcoal/10 py-4 focus:outline-none focus:border-accent transition-colors min-h-[100px] placeholder:text-charcoal/30 resize-none" 
           placeholder="Share your perspective..."
         ></textarea>
@@ -24,9 +24,9 @@
         <button 
           @click="postComment" 
           class="text-xs font-bold uppercase tracking-widest text-charcoal hover:text-accent transition-colors disabled:opacity-30"
-          :disabled="!text || loading"
+          :disabled="!newComment || submitting"
         >
-          {{ loading ? 'Posting...' : 'Publish' }}
+          {{ submitting ? 'Posting...' : 'Publish' }}
         </button>
       </div>
     </div>
@@ -68,6 +68,14 @@ const comments = ref<Comment[]>([]);
 const newComment = ref('');
 const username = ref('');
 const submitting = ref(false);
+
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
+};
 
 const fetchComments = async () => {
   try {

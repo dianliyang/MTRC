@@ -262,7 +262,6 @@ const searchResults = ref<any[]>([]); // Google Books API results
 const searching = ref(false);
 const candidates = ref<Book[]>([]);
 const loadingCandidates = ref(true);
-const processingId = ref<number | string | null>(null);
 const lastEmailPreview = ref<string | null>(null);
 
 const meetings = ref<Meeting[]>([]);
@@ -345,45 +344,6 @@ const fetchCandidates = async () => {
   }
 };
 
-const selectBook = async (book: Book) => {
-  if (!confirm(`Mark "${book.title}" as current? Notifications will be sent.`))
-    return;
-
-  processingId.value = book.id;
-  try {
-    const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/books/select`, {
-      id: book.id,
-    });
-    if (res.data.emailPreview) {
-      lastEmailPreview.value = res.data.emailPreview;
-    }
-    await fetchCandidates();
-  } catch (e) {
-    alert("Failed to update status");
-  } finally {
-    processingId.value = null;
-  }
-};
-
-const deleteBook = async (book: Book) => {
-  if (
-    !confirm(
-      `Are you sure you want to remove "${book.title}" from the library?`,
-    )
-  )
-    return;
-
-  processingId.value = book.id;
-  try {
-    await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/books/${book.id}`);
-    await fetchCandidates();
-  } catch (e) {
-    alert("Failed to delete book");
-  } finally {
-    processingId.value = null;
-  }
-};
-
 const toggleBookSelection = (id: number) => {
   const index = newMeeting.value.bookIds.indexOf(id);
   if (index === -1) {
@@ -429,19 +389,6 @@ const deleteMeeting = async (id: number) => {
     await fetchMeetings();
   } catch (e) {
     alert("Failed to delete meeting");
-  }
-};
-
-const formatAuthors = (authorsStr: string | string[]) => {
-  try {
-    if (!authorsStr) return "Unknown Author";
-    if (Array.isArray(authorsStr)) return authorsStr.join(", ");
-    if (authorsStr.startsWith("[")) {
-      return JSON.parse(authorsStr).join(", ");
-    }
-    return authorsStr;
-  } catch (e) {
-    return String(authorsStr);
   }
 };
 

@@ -101,6 +101,10 @@ import type { Meeting } from '../types';
 const meetings = ref<Meeting[]>([]);
 const loading = ref(true);
 
+const isFuture = (date: string) => new Date(date) > new Date();
+const formatDate = (date: string) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const formatTime = (date: string) => new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
 const fetchMeetings = async () => {
   try {
     const res = await axios.get<Meeting[]>(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/meetings`);

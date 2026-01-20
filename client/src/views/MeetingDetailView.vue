@@ -116,6 +116,23 @@ const joined = ref(false);
 const joining = ref(false);
 const joinForm = ref({ name: '', email: '' });
 
+const formatDate = (date: string) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const formatTime = (date: string) => new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+const isFuture = (date: string) => new Date(date) > new Date();
+
+const formatAuthors = (authorsStr: string | string[]) => {
+  try {
+    if (!authorsStr) return "Unknown Author";
+    if (Array.isArray(authorsStr)) return authorsStr.join(", ");
+    if (typeof authorsStr === 'string' && authorsStr.startsWith("[")) {
+      return JSON.parse(authorsStr).join(", ");
+    }
+    return authorsStr;
+  } catch (e) {
+    return String(authorsStr);
+  }
+};
+
 onMounted(async () => {
   try {
     const res = await axios.get<Meeting>(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/meetings/${route.params.id}`);
