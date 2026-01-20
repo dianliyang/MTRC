@@ -85,36 +85,42 @@ const logout = () => {
           </div>
 
           <!-- User Profile Icon -->
-          <div v-if="currentUser" class="relative">
+          <div 
+            v-if="currentUser" 
+            class="relative group"
+            @mouseenter="showUserMenu = true"
+            @mouseleave="showUserMenu = false"
+          >
             <button 
-              @click="showUserMenu = !showUserMenu"
-              class="w-12 h-12 rounded-full bg-white/40 backdrop-blur-xl border border-white/20 flex items-center justify-center text-xs font-bold text-charcoal/60 hover:bg-white/60 transition-all shadow-sm"
+              class="w-12 h-12 rounded-full bg-white/40 backdrop-blur-xl border border-white/20 flex items-center justify-center text-xs font-bold text-charcoal/60 group-hover:bg-white/60 transition-all shadow-sm"
             >
               {{ currentUser.name?.[0].toUpperCase() || 'U' }}
             </button>
 
             <!-- Dropdown Menu -->
             <transition name="fade">
-              <div v-if="showUserMenu" class="absolute right-0 mt-4 w-48 bg-white/90 backdrop-blur-2xl border border-white/20 rounded-2xl shadow-2xl p-4 z-[60]">
-                <div class="mb-4 pb-4 border-b border-charcoal/5">
-                  <p class="text-[10px] uppercase tracking-widest font-bold text-charcoal/40 mb-1">{{ currentUser.role }}</p>
-                  <p class="text-sm font-serif font-bold text-charcoal truncate">{{ currentUser.name }}</p>
-                </div>
-                
-                <RouterLink 
-                  to="/profile" 
-                  @click="showUserMenu = false"
-                  class="block w-full text-left text-[10px] uppercase tracking-widest font-bold text-charcoal/60 hover:text-accent mb-4 transition-colors"
-                >
-                  View Profile
-                </RouterLink>
+              <div v-if="showUserMenu" class="absolute right-0 pt-4 w-48 z-[60]">
+                <div class="bg-white/90 backdrop-blur-2xl border border-white/20 rounded-2xl shadow-2xl p-4">
+                  <div class="mb-4 pb-4 border-b border-charcoal/5">
+                    <p class="text-[10px] uppercase tracking-widest font-bold text-charcoal/40 mb-1">{{ currentUser.role }}</p>
+                    <p class="text-sm font-serif font-bold text-charcoal truncate">{{ currentUser.name }}</p>
+                  </div>
+                  
+                  <RouterLink 
+                    to="/profile" 
+                    @click="showUserMenu = false"
+                    class="block w-full text-left text-[10px] uppercase tracking-widest font-bold text-charcoal/60 hover:text-accent mb-4 transition-colors"
+                  >
+                    View Profile
+                  </RouterLink>
 
-                <button 
-                  @click="logout"
-                  class="w-full text-left text-[10px] uppercase tracking-widest font-bold text-red-400 hover:text-red-600 transition-colors"
-                >
-                  Sign Out
-                </button>
+                  <button 
+                    @click="logout"
+                    class="w-full text-left text-[10px] uppercase tracking-widest font-bold text-red-400 hover:text-red-600 transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </div>
               </div>
             </transition>
           </div>
