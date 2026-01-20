@@ -29,11 +29,12 @@ let fpInstance = null;
 onMounted(() => {
   fpInstance = flatpickr(fpInput.value, {
     enableTime: true,
-    dateFormat: "Z", // Internal format (ISO)
+    time_24hr: true, // Enable 24-hour format
+    dateFormat: "Z",
     altInput: true,
-    altFormat: "F j, Y at h:i K", // User friendly format
+    altFormat: "F j, Y - H:i", // Clean 24hr display
     defaultDate: props.modelValue,
-    minDate: "today", // Don't allow past dates
+    minDate: "today",
     disableMobile: "true",
     onChange: (selectedDates) => {
       if (selectedDates.length > 0) {
@@ -140,28 +141,62 @@ span.flatpickr-weekday {
   box-shadow: 0 8px 15px -4px rgba(44, 44, 44, 0.3) !important;
 }
 
-/* Time Section */
+/* Time Section Refinement */
 .flatpickr-time {
-  margin-top: 12px;
-  border-top: 1px solid rgba(44, 44, 44, 0.05) !important;
-  height: 50px !important;
-  padding-top: 10px;
+  margin-top: 16px;
+  border-top: 1px solid rgba(44, 44, 44, 0.08) !important;
+  height: auto !important;
+  line-height: 40px !important;
+  padding: 12px 0 4px 0 !important;
+  background: rgba(44, 44, 44, 0.02);
+  border-radius: 0 0 20px 24px;
 }
 
 .flatpickr-time input {
-  font-weight: 700 !important;
-  font-size: 1rem !important;
+  font-weight: 800 !important;
+  font-size: 1.2rem !important;
+  color: #2c2c2c !important;
+  background: transparent !important;
   border-radius: 8px !important;
+  padding: 4px 0 !important;
+}
+
+.flatpickr-time .numInputWrapper {
+  height: 40px !important;
+  flex: 1;
+}
+
+.flatpickr-time .numInputWrapper span {
+  border: none !important;
+  background: rgba(44, 44, 44, 0.05) !important;
+  border-radius: 4px;
+  margin: 2px;
+}
+
+.flatpickr-time .numInputWrapper span:hover {
+  background: rgba(217, 119, 6, 0.1) !important;
+}
+
+.flatpickr-time .numInputWrapper span.arrowUp:after {
+  border-bottom-color: #2c2c2c !important;
+}
+
+.flatpickr-time .numInputWrapper span.arrowDown:after {
+  border-top-color: #2c2c2c !important;
 }
 
 .flatpickr-time .flatpickr-time-separator {
-  opacity: 0.3;
+  font-weight: 800;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  opacity: 0.2;
 }
 
 .flatpickr-am-pm {
-  font-weight: 700 !important;
-  text-transform: uppercase;
-  font-size: 0.8rem;
+  font-weight: 800 !important;
+  font-size: 0.9rem !important;
+  height: 40px !important;
 }
 
 /* Hide focus rings */
