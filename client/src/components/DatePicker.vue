@@ -167,22 +167,7 @@ span.flatpickr-weekday {
 }
 
 .flatpickr-time .numInputWrapper span {
-  border: none !important;
-  background: rgba(44, 44, 44, 0.05) !important;
-  border-radius: 4px;
-  margin: 2px;
-}
-
-.flatpickr-time .numInputWrapper span:hover {
-  background: rgba(217, 119, 6, 0.1) !important;
-}
-
-.flatpickr-time .numInputWrapper span.arrowUp:after {
-  border-bottom-color: #2c2c2c !important;
-}
-
-.flatpickr-time .numInputWrapper span.arrowDown:after {
-  border-top-color: #2c2c2c !important;
+  display: none !important; /* Hide the up/down arrows */
 }
 
 .flatpickr-time .flatpickr-time-separator {
