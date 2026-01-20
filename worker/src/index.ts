@@ -38,34 +38,23 @@ const authMiddleware = async (c: any, next: any) => {
   return jwtMiddleware(c, next);
 };
 
-// Admin Middleware
+// Admin Middleware (Assumes authMiddleware has already run)
 const adminMiddleware = async (c: any, next: any) => {
-  await authMiddleware(c, async () => {
-    const payload = c.get('jwtPayload');
-    if (payload?.role !== 'admin') {
-      return c.json({ error: 'Unauthorized: Admin access required' }, 403);
-    }
-    await next();
-  });
+  const payload = c.get('jwtPayload');
+  if (payload?.role !== 'admin') {
+    return c.json({ error: 'Unauthorized: Admin access required' }, 403);
+  }
+  await next();
 };
 
-// Protect specific routes
-app.use('/api/books', async (c, next) => {
-  if (c.req.method === 'POST') return authMiddleware(c, next);
-  await next();
+// Global API Protection
+app.use('/api/*', async (c, next) => {
+  // Allow login to be public
+  if (c.req.path === '/api/login') return next();
+  return authMiddleware(c, next);
 });
-app.use('/api/books/*', async (c, next) => {
-  if (c.req.method === 'DELETE' || c.req.path.includes('/select')) return authMiddleware(c, next);
-  await next();
-});
-app.use('/api/meetings', async (c, next) => {
-  if (c.req.method === 'POST') return authMiddleware(c, next);
-  await next();
-});
-app.use('/api/meetings/*', async (c, next) => {
-  if (c.req.method === 'DELETE') return authMiddleware(c, next);
-  await next();
-});
+
+// Protect specific admin routes
 app.use('/api/admin/*', adminMiddleware);
 
 // Helper: Get DB instance

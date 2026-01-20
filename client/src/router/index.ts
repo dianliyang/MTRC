@@ -13,7 +13,8 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView
+      component: HomeView,
+      meta: { requiresAuth: true }
     },
     {
       path: '/login',
@@ -23,12 +24,14 @@ const router = createRouter({
     {
       path: '/library',
       name: 'library',
-      component: LibraryView
+      component: LibraryView,
+      meta: { requiresAuth: true }
     },
     {
       path: '/library/:id',
       name: 'book-detail',
-      component: BookDetailView
+      component: BookDetailView,
+      meta: { requiresAuth: true }
     },
     {
       path: '/admin',
@@ -39,12 +42,14 @@ const router = createRouter({
     {
       path: '/gatherings',
       name: 'gatherings',
-      component: GatheringsView
+      component: GatheringsView,
+      meta: { requiresAuth: true }
     },
     {
       path: '/gatherings/:id',
       name: 'meeting-detail',
-      component: MeetingDetailView
+      component: MeetingDetailView,
+      meta: { requiresAuth: true }
     }
   ]
 })
