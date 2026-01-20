@@ -100,6 +100,15 @@ const logout = () => {
                   <p class="text-[10px] uppercase tracking-widest font-bold text-charcoal/40 mb-1">{{ currentUser.role }}</p>
                   <p class="text-sm font-serif font-bold text-charcoal truncate">{{ currentUser.name }}</p>
                 </div>
+                
+                <RouterLink 
+                  to="/profile" 
+                  @click="showUserMenu = false"
+                  class="block w-full text-left text-[10px] uppercase tracking-widest font-bold text-charcoal/60 hover:text-accent mb-4 transition-colors"
+                >
+                  View Profile
+                </RouterLink>
+
                 <button 
                   @click="logout"
                   class="w-full text-left text-[10px] uppercase tracking-widest font-bold text-red-400 hover:text-red-600 transition-colors"
