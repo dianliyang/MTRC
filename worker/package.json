@@ -1,0 +1,18 @@
+{
+  "name": "morethan-worker",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "generate": "drizzle-kit generate",
+    "migrate": "wrangler d1 migrations apply DB"
+  },
+  "dependencies": {
+    "hono": "^4.0.0",
+    "drizzle-orm": "^0.29.3"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0",
+    "drizzle-kit": "^0.20.14",
+    "@cloudflare/workers-types": "^4.20240208.0"
+  }
+}

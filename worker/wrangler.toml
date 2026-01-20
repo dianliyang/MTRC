@@ -1,0 +1,8 @@
+name = "morethan-worker"
+main = "src/index.ts"
+compatibility_date = "2024-02-08"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "morethan-db"
+database_id = "549e7209-981c-4609-87ff-f8a3d686f7ae"

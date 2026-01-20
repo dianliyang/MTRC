@@ -1,0 +1,13 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left Book Spine -->
+  <path d="M40 30L40 90" stroke="#2c2c2c" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- Right Book Spine -->
+  <path d="M80 30L80 90" stroke="#2c2c2c" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- The Connecting Curve (Open Book / M shape implied) -->
+  <path d="M40 90C40 90 60 100 80 90" stroke="#2c2c2c" stroke-width="3" stroke-linecap="round" stroke-opacity="0.5"/>
+  
+  <!-- The Accent Dot (The Gathering Point) -->
+  <circle cx="60" cy="60" r="12" fill="#d97706"/>
+</svg>
