@@ -5,12 +5,13 @@ import router from './router'
 import axios from 'axios'
 
 // Configure Axios
-axios.defaults.baseURL = import.meta.env.VITE_API_URL;
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
 
 axios.interceptors.request.use(config => {
   const token = localStorage.getItem('authToken');
   // Only add token to our own API requests
-  const isInternalRequest = config.url?.startsWith('/api') || (config.baseURL && config.url?.startsWith(config.baseURL));
+  const url = config.url || '';
+  const isInternalRequest = url.startsWith('/') || url.startsWith(axios.defaults.baseURL!);
   
   if (token && isInternalRequest) {
     config.headers.Authorization = `Bearer ${token}`;

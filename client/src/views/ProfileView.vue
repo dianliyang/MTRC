@@ -66,7 +66,14 @@ const deleting = ref(false);
 onMounted(() => {
   const userStr = localStorage.getItem('user');
   if (userStr) {
-    user.value = JSON.parse(userStr);
+    try {
+      user.value = JSON.parse(userStr);
+    } catch (e) {
+      console.error('Failed to parse user from storage');
+      logout();
+    }
+  } else {
+    logout();
   }
 });
 

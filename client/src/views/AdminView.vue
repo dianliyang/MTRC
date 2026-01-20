@@ -455,14 +455,21 @@ const adjustTextareaHeight = (el: any) => {
   el.style.height = (el.scrollHeight) + "px";
 };
 
-onMounted(() => {
+onMounted(async () => {
   const userStr = localStorage.getItem('user');
   if (userStr) {
     currentUser.value = JSON.parse(userStr);
     currentUserId.value = String(currentUser.value.id);
   }
-  fetchCandidates();
-  fetchMeetings();
+  
+  try {
+    await Promise.all([
+      fetchCandidates(),
+      fetchMeetings()
+    ]);
+  } catch (e) {
+    console.error('Failed to initialize Admin Dashboard:', e);
+  }
 });
 </script>
 
