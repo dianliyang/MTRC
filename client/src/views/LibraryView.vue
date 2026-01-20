@@ -88,9 +88,10 @@
     </div>
 
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
-      <div 
+      <router-link 
         v-for="book in filteredBooks" 
         :key="book.id" 
+        :to="`/library/${book.id}`"
         class="group relative bg-white/40 backdrop-blur-sm border border-white hover:border-accent/20 rounded-2xl p-4 sm:p-6 transition-all duration-500 hover:shadow-xl hover:-translate-y-1 flex flex-row sm:flex-col gap-4 sm:gap-0"
       >
         <!-- Status Badge -->
@@ -133,7 +134,7 @@
             <span class="hidden xs:inline">{{ book.pageCount }}pp</span>
           </div>
         </div>
-      </div>
+      </router-link>
     </div>
   </div>
 </template>

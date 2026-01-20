@@ -26,16 +26,18 @@
           :key="book.id"
           class="bg-white p-4 rounded-xl shadow-sm flex gap-5 group border border-transparent hover:border-accent/10 transition-all"
         >
-          <div class="w-16 h-24 bg-gray-100 shrink-0 overflow-hidden rounded shadow-inner">
+          <router-link :to="`/library/${book.id}`" class="w-16 h-24 bg-gray-100 shrink-0 overflow-hidden rounded shadow-inner cursor-pointer">
             <img :src="book.coverUrl" class="w-full h-full object-cover" />
-          </div>
+          </router-link>
           <div class="flex-1 min-w-0 flex flex-col justify-between">
             <div>
               <div v-if="book.suggesterId && String(book.suggesterId) === currentUserId" class="mb-1">
                 <span class="text-[7px] uppercase tracking-[0.2em] font-bold px-1.5 py-0.5 rounded bg-accent/10 text-accent">Added by you</span>
               </div>
               <div class="flex justify-between items-start gap-2">
-                <h3 class="font-serif font-bold text-lg text-charcoal truncate">{{ book.title }}</h3>
+                <router-link :to="`/library/${book.id}`">
+                  <h3 class="font-serif font-bold text-lg text-charcoal truncate hover:text-accent transition-colors">{{ book.title }}</h3>
+                </router-link>
                 <span class="text-[8px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full border border-charcoal/5 bg-charcoal/5 text-charcoal/40">
                   {{ book.status }}
                 </span>

@@ -110,6 +110,17 @@ app.get('/api/books', async (c) => {
   return c.json(result);
 });
 
+// Get single book
+app.get('/api/books/:id', async (c) => {
+  const db = getDB(c);
+  const id = parseInt(c.req.param('id'));
+  const result = await db.query.books.findFirst({
+    where: eq(schema.books.id, id),
+  });
+  if (!result) return c.json({ error: 'Book not found' }, 404);
+  return c.json(result);
+});
+
 // Add a book
 app.post('/api/books', async (c) => {
   const db = getDB(c);

@@ -8,7 +8,7 @@
       <!-- Hero Section -->
       <section class="relative py-12 md:py-20 flex flex-col md:flex-row gap-12 items-center md:items-start">
         <!-- Cover Art with Reflection -->
-        <div class="relative group perspective-1000 w-64 md:w-80 shrink-0">
+        <router-link :to="`/library/${currentBook.id}`" class="relative group perspective-1000 w-64 md:w-80 shrink-0 cursor-pointer">
           <div class="relative z-10 rounded-sm shadow-2xl transition-transform duration-500 ease-out group-hover:rotate-y-6 transform-style-3d">
             <img 
               v-if="currentBook.coverUrl" 
@@ -24,7 +24,7 @@
           
           <!-- Reflection -->
           <div class="absolute -bottom-4 left-0 right-0 h-16 bg-gradient-to-b from-black/5 to-transparent blur-sm transform scale-y-[-0.3] opacity-50 z-0"></div>
-        </div>
+        </router-link>
 
         <!-- Book Details -->
         <div class="flex-1 text-center md:text-left">
@@ -32,9 +32,11 @@
             Current Selection
           </div>
           
-          <h1 class="font-serif text-5xl md:text-6xl text-charcoal leading-tight mb-4">
-            {{ currentBook.title }}
-          </h1>
+          <router-link :to="`/library/${currentBook.id}`">
+            <h1 class="font-serif text-5xl md:text-6xl text-charcoal leading-tight mb-4 hover:text-accent transition-colors">
+              {{ currentBook.title }}
+            </h1>
+          </router-link>
           
           <p class="text-charcoal/60 text-lg mb-4 font-light italic">
             by {{ formatAuthors(currentBook.authors) }}
