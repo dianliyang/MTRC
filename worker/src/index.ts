@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { jwt, sign } from 'hono/jwt';
 import { drizzle } from 'drizzle-orm/d1';
-import { eq, desc, or, and } from 'drizzle-orm';
+import { eq, desc, or, and, isNull, inArray } from 'drizzle-orm';
 import * as schema from './schema';
 
 type Bindings = {
@@ -31,8 +31,13 @@ app.use('*', async (c, next) => {
 
 // Auth Middleware for protected routes
 const authMiddleware = async (c: any, next: any) => {
+  const secret = c.env.JWT_SECRET;
+  if (!secret) {
+    console.error('JWT_SECRET is not configured');
+    return c.json({ error: 'Server configuration error' }, 500);
+  }
   const jwtMiddleware = jwt({
-    secret: c.env.JWT_SECRET || 'fallback_secret',
+    secret: secret,
     alg: 'HS256',
   });
   return jwtMiddleware(c, next);
@@ -92,288 +97,397 @@ async function sendEmail(to: string, subject: string, text: string) {
 
 // Get all books
 app.get('/api/books', async (c) => {
-  const db = getDB(c);
-  const result = await db.query.books.findMany({
-    orderBy: [desc(schema.books.createdAt)],
-  });
-  return c.json(result);
+  try {
+    const db = getDB(c);
+    const result = await db.query.books.findMany({
+      orderBy: [desc(schema.books.createdAt)],
+    });
+    return c.json(result);
+  } catch (e) {
+    return c.json({ error: 'Failed to fetch books' }, 500);
+  }
 });
 
 // Get single book
 app.get('/api/books/:id', async (c) => {
-  const db = getDB(c);
-  const id = parseInt(c.req.param('id'));
-  const result = await db.query.books.findFirst({
-    where: eq(schema.books.id, id),
-  });
-  if (!result) return c.json({ error: 'Book not found' }, 404);
-  return c.json(result);
+  try {
+    const db = getDB(c);
+    const id = parseInt(c.req.param('id'));
+    if (isNaN(id)) return c.json({ error: 'Invalid ID' }, 400);
+    
+    const result = await db.query.books.findFirst({
+      where: eq(schema.books.id, id),
+    });
+    if (!result) return c.json({ error: 'Book not found' }, 404);
+    return c.json(result);
+  } catch (e) {
+    return c.json({ error: 'Failed to fetch book' }, 500);
+  }
 });
 
 // Add a book
 app.post('/api/books', async (c) => {
-  const db = getDB(c);
-  const body = await c.req.json();
-  const payload = c.get('jwtPayload'); // From middleware
-  const userId = payload ? String(payload.id) : body.suggesterId;
-  
-  // Check if exists
-  const existing = await db.query.books.findFirst({
-    where: eq(schema.books.googleId, body.googleId),
-  });
+  try {
+    const db = getDB(c);
+    const body = await c.req.json();
+    const payload = c.get('jwtPayload'); // From middleware
+    const userId = payload ? String(payload.id) : body.suggesterId;
+    
+    if (!body.googleId || !body.title) return c.json({ error: 'Missing required fields' }, 400);
+    
+    // Check if exists
+    const existing = await db.query.books.findFirst({
+      where: eq(schema.books.googleId, body.googleId),
+    });
 
-  if (existing) return c.json(existing);
+    if (existing) return c.json(existing);
 
-  const newItem = await db.insert(schema.books).values({
-    googleId: body.googleId,
-    title: body.title,
-    authors: JSON.stringify(body.authors),
-    description: body.description,
-    coverUrl: body.coverUrl,
-    language: body.language,
-    pageCount: body.pageCount,
-    publishedDate: body.publishedDate,
-    suggesterId: userId,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }).returning().get();
+    const newItem = await db.insert(schema.books).values({
+      googleId: body.googleId,
+      title: body.title,
+      authors: JSON.stringify(body.authors || []),
+      description: body.description || '',
+      coverUrl: body.coverUrl || '',
+      language: body.language || '',
+      pageCount: body.pageCount || 0,
+      publishedDate: body.publishedDate || '',
+      suggesterId: userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).returning().get();
 
-  return c.json(newItem);
+    return c.json(newItem);
+  } catch (e) {
+    return c.json({ error: 'Failed to add book' }, 500);
+  }
 });
 
 // Delete book
 app.delete('/api/books/:id', async (c) => {
-  const db = getDB(c);
-  const id = parseInt(c.req.param('id'));
-  await db.delete(schema.books).where(eq(schema.books.id, id));
-  return c.json({ success: true });
+  try {
+    const db = getDB(c);
+    const id = parseInt(c.req.param('id'));
+    if (isNaN(id)) return c.json({ error: 'Invalid ID' }, 400);
+    await db.delete(schema.books).where(eq(schema.books.id, id));
+    return c.json({ success: true });
+  } catch (e) {
+    return c.json({ error: 'Failed to delete book' }, 500);
+  }
 });
 
 // Select Current Book
 app.post('/api/books/select', async (c) => {
-  const db = getDB(c);
-  const body = await c.req.json();
-  const id = body.id;
+  try {
+    const db = getDB(c);
+    const body = await c.req.json();
+    const id = body.id;
+    if (!id) return c.json({ error: 'Missing book ID' }, 400);
 
-  // Archive current
-  await db.update(schema.books)
-    .set({ status: 'read' })
-    .where(eq(schema.books.status, 'current'));
+    // Archive current
+    await db.update(schema.books)
+      .set({ status: 'read' })
+      .where(eq(schema.books.status, 'current'));
 
-  // Set new current
-  const updated = await db.update(schema.books)
-    .set({ status: 'current', selectedDate: new Date() })
-    .where(eq(schema.books.id, id))
-    .returning().get();
+    // Set new current
+    const updated = await db.update(schema.books)
+      .set({ status: 'current', selectedDate: new Date(), updatedAt: new Date() })
+      .where(eq(schema.books.id, id))
+      .returning().get();
 
-  if (!updated) return c.json({ error: 'Book not found' }, 404);
+    if (!updated) return c.json({ error: 'Book not found' }, 404);
 
-  // Notify
-  const subs = await db.query.subscribers.findMany();
-  const emails = subs.filter(s => s.email).map(s => s.email);
-  const phones = subs.filter(s => s.phoneNumber).map(s => s.phoneNumber);
+    // Notify
+    const subs = await db.query.subscribers.findMany();
+    const emails = subs.filter(s => s.email).map(s => s.email as string);
+    const phones = subs.filter(s => s.phoneNumber).map(s => s.phoneNumber as string);
 
-  // Email Stub
-  if (emails.length > 0) {
-    // Basic formatting
-    const validEmails = emails.filter((e): e is string => !!e);
-    await sendEmail(validEmails.join(','), `New Book: ${updated.title}`, `We are reading ${updated.title}`);
+    // Email Stub
+    if (emails.length > 0) {
+      await sendEmail(emails.join(','), `New Book: ${updated.title}`, `We are reading ${updated.title}`);
+    }
+
+    // Signal
+    if (phones.length > 0) {
+      const msg = `📚 New Book of the Month: "${updated.title}"! Join us: https://read.oili.dev`;
+      c.executionCtx.waitUntil(Promise.all(phones.map(p => sendSignalMessage(c.env, p, msg))));
+    }
+
+    return c.json({ book: updated });
+  } catch (e) {
+    return c.json({ error: 'Failed to select book' }, 500);
   }
-
-  // Signal
-  if (phones.length > 0) {
-    const msg = `📚 New Book of the Month: "${updated.title}"! Join us: https://read.oili.dev`;
-    c.executionCtx.waitUntil(Promise.all(phones.map(p => p ? sendSignalMessage(c.env, p, msg) : Promise.resolve())));
-  }
-
-  return c.json({ book: updated });
 });
 
 // Subscribe
 app.post('/api/subscribe', async (c) => {
-  const db = getDB(c);
-  const body = await c.req.json();
-  const { email, phoneNumber } = body;
+  try {
+    const db = getDB(c);
+    const body = await c.req.json();
+    const { email, phoneNumber } = body;
 
-  if (!email && !phoneNumber) return c.json({ error: 'Provide email or phone' }, 400);
+    if (!email && !phoneNumber) return c.json({ error: 'Provide email or phone' }, 400);
 
-  const existing = await db.query.subscribers.findFirst({
-    where: or(
-      email ? eq(schema.subscribers.email, email) : undefined,
-      phoneNumber ? eq(schema.subscribers.phoneNumber, phoneNumber) : undefined
-    )
-  });
+    const existing = await db.query.subscribers.findFirst({
+      where: or(
+        email ? eq(schema.subscribers.email, email) : undefined,
+        phoneNumber ? eq(schema.subscribers.phoneNumber, phoneNumber) : undefined
+      )
+    });
 
-  if (existing) {
-    await db.update(schema.subscribers)
-      .set({ 
-        email: email || existing.email,
-        phoneNumber: phoneNumber || existing.phoneNumber,
-        updatedAt: new Date()
-      })
-      .where(eq(schema.subscribers.id, existing.id));
-    return c.json({ message: 'Updated' });
+    if (existing) {
+      await db.update(schema.subscribers)
+        .set({ 
+          email: email || existing.email,
+          phoneNumber: phoneNumber || existing.phoneNumber,
+          updatedAt: new Date()
+        })
+        .where(eq(schema.subscribers.id, existing.id));
+      return c.json({ message: 'Updated' });
+    }
+
+    await db.insert(schema.subscribers).values({
+      email,
+      phoneNumber,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    return c.json({ success: true });
+  } catch (e) {
+    return c.json({ error: 'Failed to subscribe' }, 500);
   }
-
-  await db.insert(schema.subscribers).values({
-    email,
-    phoneNumber,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  });
-
-  return c.json({ success: true });
 });
 
 // Comments
 app.get('/api/books/:id/comments', async (c) => {
-...
+  try {
+    const db = getDB(c);
+    const id = parseInt(c.req.param('id'));
+    if (isNaN(id)) return c.json({ error: 'Invalid ID' }, 400);
+    const results = await db.query.comments.findMany({
+      where: eq(schema.comments.bookId, id),
+      orderBy: [desc(schema.comments.createdAt)]
+    });
+    return c.json(results);
+  } catch (e) {
+    return c.json({ error: 'Failed to fetch comments' }, 500);
+  }
+});
+
+app.post('/api/books/:id/comments', async (c) => {
+  try {
+    const db = getDB(c);
+    const id = parseInt(c.req.param('id'));
+    if (isNaN(id)) return c.json({ error: 'Invalid ID' }, 400);
+    const body = await c.req.json();
+    
+    if (!body.text) return c.json({ error: 'Comment text is required' }, 400);
+
+    const result = await db.insert(schema.comments).values({
+      bookId: id,
+      username: body.username || 'Anonymous',
+      text: body.text,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning().get();
+
+    return c.json(result);
+  } catch (e) {
+    return c.json({ error: 'Failed to post comment' }, 500);
+  }
+});
+
 // Likes
 app.get('/api/books/:id/like-status', async (c) => {
-  const db = getDB(c);
-  const bookId = parseInt(c.req.param('id'));
-  const payload = c.get('jwtPayload');
-  
-  const existing = await db.query.likes.findFirst({
-    where: and(eq(schema.likes.userId, parseInt(payload.id)), eq(schema.likes.bookId, bookId))
-  });
+  try {
+    const db = getDB(c);
+    const bookId = parseInt(c.req.param('id'));
+    if (isNaN(bookId)) return c.json({ error: 'Invalid ID' }, 400);
+    const payload = c.get('jwtPayload');
+    
+    const existing = await db.query.likes.findFirst({
+      where: and(eq(schema.likes.userId, parseInt(payload.id)), eq(schema.likes.bookId, bookId))
+    });
 
-  return c.json({ liked: !!existing });
+    return c.json({ liked: !!existing });
+  } catch (e) {
+    return c.json({ error: 'Failed to fetch like status' }, 500);
+  }
 });
 
 app.post('/api/books/:id/toggle-like', async (c) => {
-  const db = getDB(c);
-  const bookId = parseInt(c.req.param('id'));
-  const payload = c.get('jwtPayload');
-  const userId = parseInt(payload.id);
+  try {
+    const db = getDB(c);
+    const bookId = parseInt(c.req.param('id'));
+    if (isNaN(bookId)) return c.json({ error: 'Invalid ID' }, 400);
+    const payload = c.get('jwtPayload');
+    const userId = parseInt(payload.id);
 
-  const existing = await db.query.likes.findFirst({
-    where: and(eq(schema.likes.userId, userId), eq(schema.likes.bookId, bookId))
-  });
+    const existing = await db.query.likes.findFirst({
+      where: and(eq(schema.likes.userId, userId), eq(schema.likes.bookId, bookId))
+    });
 
-  if (existing) {
-    // Unlike
-    await db.delete(schema.likes).where(eq(schema.likes.id, existing.id));
-    await db.update(schema.books)
-      .set({ likesCount: Math.max(0, (await db.query.books.findFirst({ where: eq(schema.books.id, bookId) }))?.likesCount || 0) - 1 })
-      .where(eq(schema.books.id, bookId));
-    return c.json({ liked: false });
-  } else {
-    // Like
-    await db.insert(schema.likes).values({ userId, bookId, createdAt: new Date() });
-    await db.update(schema.books)
-      .set({ likesCount: ((await db.query.books.findFirst({ where: eq(schema.books.id, bookId) }))?.likesCount || 0) + 1 })
-      .where(eq(schema.books.id, bookId));
-    return c.json({ liked: true });
+    if (existing) {
+      // Unlike
+      await db.delete(schema.likes).where(eq(schema.likes.id, existing.id));
+      const book = await db.query.books.findFirst({ where: eq(schema.books.id, bookId) });
+      await db.update(schema.books)
+        .set({ likesCount: Math.max(0, (book?.likesCount || 0) - 1), updatedAt: new Date() })
+        .where(eq(schema.books.id, bookId));
+      return c.json({ liked: false });
+    } else {
+      // Like
+      await db.insert(schema.likes).values({ userId, bookId, createdAt: new Date() });
+      const book = await db.query.books.findFirst({ where: eq(schema.books.id, bookId) });
+      await db.update(schema.books)
+        .set({ likesCount: (book?.likesCount || 0) + 1, updatedAt: new Date() })
+        .where(eq(schema.books.id, bookId));
+      return c.json({ liked: true });
+    }
+  } catch (e) {
+    return c.json({ error: 'Failed to toggle like' }, 500);
   }
 });
 
 // Meetings
 app.get('/api/meetings', async (c) => {
-  const db = getDB(c);
-  
-  // Drizzle relationship fetching
-  const results = await db.query.meetings.findMany({
-    orderBy: [desc(schema.meetings.date)],
-  });
-
-  // For complex relations like Many-to-Many in Drizzle/D1, manual queries are often safer or more explicit
-  // fetching books for each meeting
-  const meetingsWithDetails = await Promise.all(results.map(async (m) => {
-    // Get books
-    const mb = await db.select().from(schema.meetingBooks).where(eq(schema.meetingBooks.meetingId, m.id));
-    const bookIds = mb.map(r => r.bookId);
-    let books: any[] = [];
-    if (bookIds.length > 0) {
-       // 'inArray' should be used, implementing manually for brevity or importing
-       // fetching individually for simplicity in this stub
-       books = await Promise.all(bookIds.map(bid => db.query.books.findFirst({ where: eq(schema.books.id, bid!) })));
-    }
+  try {
+    const db = getDB(c);
     
-    // Get participants
-    const parts = await db.query.participants.findMany({ where: eq(schema.participants.meetingId, m.id) });
-    
-    return {
-      ...m,
-      Books: books.filter(Boolean),
-      Participants: parts
-    };
-  }));
+    // Drizzle relationship fetching
+    const results = await db.query.meetings.findMany({
+      orderBy: [desc(schema.meetings.date)],
+    });
 
-  return c.json(meetingsWithDetails);
+    // For complex relations like Many-to-Many in Drizzle/D1, manual queries are often safer or more explicit
+    // fetching books for each meeting
+    const meetingsWithDetails = await Promise.all(results.map(async (m) => {
+      // Get books
+      const mb = await db.select({ bookId: schema.meetingBooks.bookId })
+        .from(schema.meetingBooks)
+        .where(eq(schema.meetingBooks.meetingId, m.id));
+      
+      const bookIds = mb.map(r => r.bookId).filter((id): id is number => id !== null);
+      
+      let books: any[] = [];
+      if (bookIds.length > 0) {
+        books = await db.query.books.findMany({
+          where: inArray(schema.books.id, bookIds)
+        });
+      }
+      
+      // Get participants
+      const parts = await db.query.participants.findMany({ where: eq(schema.participants.meetingId, m.id) });
+      
+      return {
+        ...m,
+        Books: books,
+        Participants: parts
+      };
+    }));
+
+    return c.json(meetingsWithDetails);
+  } catch (e) {
+    console.error(e);
+    return c.json({ error: 'Failed to fetch meetings' }, 500);
+  }
 });
 
 app.get('/api/meetings/:id', async (c) => {
-  const db = getDB(c);
-  const id = parseInt(c.req.param('id'));
-  const meeting = await db.query.meetings.findFirst({ where: eq(schema.meetings.id, id) });
-  
-  if (!meeting) return c.json({ error: 'Not found' }, 404);
+  try {
+    const db = getDB(c);
+    const id = parseInt(c.req.param('id'));
+    if (isNaN(id)) return c.json({ error: 'Invalid ID' }, 400);
+    const meeting = await db.query.meetings.findFirst({ where: eq(schema.meetings.id, id) });
+    
+    if (!meeting) return c.json({ error: 'Not found' }, 404);
 
-  // Fetch relations (similar logic as above)
-  const mb = await db.select().from(schema.meetingBooks).where(eq(schema.meetingBooks.meetingId, id));
-  const bookIds = mb.map(r => r.bookId);
-  let books: any[] = [];
-  if (bookIds.length > 0) {
-     books = await Promise.all(bookIds.map(bid => db.query.books.findFirst({ where: eq(schema.books.id, bid!) })));
+    // Fetch relations
+    const mb = await db.select({ bookId: schema.meetingBooks.bookId })
+      .from(schema.meetingBooks)
+      .where(eq(schema.meetingBooks.meetingId, id));
+    
+    const bookIds = mb.map(r => r.bookId).filter((id): id is number => id !== null);
+    
+    let books: any[] = [];
+    if (bookIds.length > 0) {
+       books = await db.query.books.findMany({ where: inArray(schema.books.id, bookIds) });
+    }
+    const parts = await db.query.participants.findMany({ where: eq(schema.participants.meetingId, id) });
+
+    return c.json({
+      ...meeting,
+      Books: books,
+      Participants: parts
+    });
+  } catch (e) {
+    return c.json({ error: 'Failed to fetch meeting' }, 500);
   }
-  const parts = await db.query.participants.findMany({ where: eq(schema.participants.meetingId, id) });
-
-  return c.json({
-    ...meeting,
-    Books: books.filter(Boolean),
-    Participants: parts
-  });
 });
 
 app.post('/api/meetings', async (c) => {
-  const db = getDB(c);
-  const body = await c.req.json();
-  
-  const newMeeting = await db.insert(schema.meetings).values({
-    date: new Date(body.date),
-    topic: body.topic,
-    location: body.location,
-    host: body.host,
-    description: body.description,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }).returning().get();
+  try {
+    const db = getDB(c);
+    const body = await c.req.json();
+    
+    const newMeeting = await db.insert(schema.meetings).values({
+      date: new Date(body.date),
+      topic: body.topic,
+      location: body.location || 'Online',
+      host: body.host || 'Group Curator',
+      description: body.description,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning().get();
 
-  if (body.bookIds && body.bookIds.length > 0) {
-    for (const bid of body.bookIds) {
-      await db.insert(schema.meetingBooks).values({
-        meetingId: newMeeting.id,
-        bookId: bid
-      });
+    if (body.bookIds && body.bookIds.length > 0) {
+      for (const bid of body.bookIds) {
+        await db.insert(schema.meetingBooks).values({
+          meetingId: newMeeting.id,
+          bookId: bid
+        });
+      }
     }
-  }
 
-  // Refetch to return full object logic skipped for brevity, returning basic
-  return c.json(newMeeting);
+    return c.json(newMeeting);
+  } catch (e) {
+    return c.json({ error: 'Failed to create meeting' }, 500);
+  }
 });
 
 app.delete('/api/meetings/:id', async (c) => {
-  const db = getDB(c);
-  const id = parseInt(c.req.param('id'));
-  await db.delete(schema.meetings).where(eq(schema.meetings.id, id));
-  return c.json({ success: true });
+  try {
+    const db = getDB(c);
+    const id = parseInt(c.req.param('id'));
+    if (isNaN(id)) return c.json({ error: 'Invalid ID' }, 400);
+    await db.delete(schema.meetings).where(eq(schema.meetings.id, id));
+    return c.json({ success: true });
+  } catch (e) {
+    return c.json({ error: 'Failed to delete meeting' }, 500);
+  }
 });
 
 app.post('/api/meetings/:id/join', async (c) => {
-  const db = getDB(c);
-  const id = parseInt(c.req.param('id'));
-  const body = await c.req.json();
-  
-  const part = await db.insert(schema.participants).values({
-    meetingId: id,
-    name: body.name,
-    email: body.email,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }).returning().get();
+  try {
+    const db = getDB(c);
+    const id = parseInt(c.req.param('id'));
+    if (isNaN(id)) return c.json({ error: 'Invalid ID' }, 400);
+    const body = await c.req.json();
+    
+    if (!body.name) return c.json({ error: 'Name is required' }, 400);
 
-  return c.json(part);
+    const part = await db.insert(schema.participants).values({
+      meetingId: id,
+      name: body.name,
+      email: body.email,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning().get();
+
+    return c.json(part);
+  } catch (e) {
+    return c.json({ error: 'Failed to join meeting' }, 500);
+  }
 });
 
 // Auth
@@ -426,7 +540,7 @@ app.post('/api/login', async (c) => {
       eq(schema.users.email, email), 
       eq(schema.users.password, hashHex),
       // Prevent login if account is marked as deleted
-      or(eq(schema.users.deletedAt, null), undefined)
+      isNull(schema.users.deletedAt)
     )
   });
 
@@ -446,27 +560,31 @@ app.post('/api/login', async (c) => {
 
 // Profile Management
 app.delete('/api/profile', async (c) => {
-  const db = getDB(c);
-  const payload = c.get('jwtPayload');
-  
-  if (!payload?.id) return c.json({ error: 'Unauthorized' }, 401);
+  try {
+    const db = getDB(c);
+    const payload = c.get('jwtPayload');
+    
+    if (!payload?.id) return c.json({ error: 'Unauthorized' }, 401);
 
-  const userId = parseInt(payload.id);
-  const timestamp = Date.now();
-  
-  // Soft delete: update data to mark as deleted instead of removing
-  await db.update(schema.users)
-    .set({
-      email: `deleted_${userId}_${timestamp}@mtrc.internal`,
-      name: 'Deleted Curator',
-      password: `DELETED_${timestamp}_${Math.random().toString(36).substring(7)}`,
-      role: 'user', // Reset role
-      deletedAt: new Date(),
-      updatedAt: new Date()
-    })
-    .where(eq(schema.users.id, userId));
+    const userId = parseInt(payload.id);
+    const timestamp = Date.now();
+    
+    // Soft delete: update data to mark as deleted instead of removing
+    await db.update(schema.users)
+      .set({
+        email: `deleted_${userId}_${timestamp}@mtrc.internal`,
+        name: 'Deleted Curator',
+        password: `DELETED_${timestamp}_${Math.random().toString(36).substring(7)}`,
+        role: 'user', // Reset role
+        deletedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(schema.users.id, userId));
 
-  return c.json({ success: true, message: 'Account has been deactivated' });
+    return c.json({ success: true, message: 'Account has been deactivated' });
+  } catch (e) {
+    return c.json({ error: 'Failed to deactivate account' }, 500);
+  }
 });
 
 
