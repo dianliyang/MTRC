@@ -29,14 +29,13 @@ let fpInstance = null;
 onMounted(() => {
   fpInstance = flatpickr(fpInput.value, {
     enableTime: true,
-    dateFormat: "Y-m-d H:i",
+    dateFormat: "Z", // Internal format (ISO)
+    altInput: true,
+    altFormat: "F j, Y at h:i K", // User friendly format
     defaultDate: props.modelValue,
-    disableMobile: "true", // Force custom picker on mobile for consistency
-    onChange: (selectedDates, dateStr) => {
-      // Convert to ISO string for backend compatibility if needed, 
-      // but keeping it simple as dateStr for now to match text input behavior
-      // The backend expects specific format or Date object. 
-      // Let's emit the ISO string for safety.
+    minDate: "today", // Don't allow past dates
+    disableMobile: "true",
+    onChange: (selectedDates) => {
       if (selectedDates.length > 0) {
         emit('update:modelValue', selectedDates[0].toISOString());
       } else {
