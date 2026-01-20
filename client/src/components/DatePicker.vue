@@ -29,10 +29,10 @@ let fpInstance = null;
 onMounted(() => {
   fpInstance = flatpickr(fpInput.value, {
     enableTime: true,
-    time_24hr: true, // Enable 24-hour format
+    time_24hr: false, // Re-enable AM/PM
     dateFormat: "Z",
     altInput: true,
-    altFormat: "F j, Y - H:i", // Clean 24hr display
+    altFormat: "F j, Y - h:i K", // User friendly format with AM/PM
     defaultDate: props.modelValue,
     minDate: "today",
     disableMobile: "true",
@@ -182,6 +182,18 @@ span.flatpickr-weekday {
   font-weight: 800 !important;
   font-size: 0.9rem !important;
   height: 40px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.flatpickr-am-pm:hover {
+  background: rgba(217, 119, 6, 0.1) !important;
+  color: #d97706 !important;
 }
 
 /* Hide focus rings */
