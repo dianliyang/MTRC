@@ -12,27 +12,17 @@
       </button>
     </div>
 
-    <!-- Library Management Search -->
+    <!-- Library Management Section -->
     <div class="mb-16">
-      <div class="flex justify-between items-baseline mb-6">
+      <div class="flex justify-between items-baseline mb-8">
         <h2 class="font-serif text-3xl text-charcoal">Library Management</h2>
-        <span class="text-[10px] text-charcoal/40 uppercase tracking-[0.2em] font-bold">Manage Collection</span>
-      </div>
-      
-      <div class="relative max-w-2xl mb-8">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Filter library by title or author..."
-          class="w-full bg-white border-none py-4 pl-6 pr-12 shadow-sm rounded-lg text-lg focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-charcoal/30"
-        />
-        <svg class="w-5 h-5 absolute right-4 top-4.5 text-charcoal/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <span class="text-[10px] text-charcoal/40 uppercase tracking-[0.2em] font-bold">Collection Overview</span>
       </div>
 
-      <!-- Library List (Filtered) -->
+      <!-- Library List -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div
-          v-for="book in filteredCandidates"
+          v-for="book in candidates"
           :key="book.id"
           class="bg-white p-4 rounded-xl shadow-sm flex gap-5 group border border-transparent hover:border-accent/10 transition-all"
         >
@@ -71,8 +61,8 @@
         </div>
       </div>
       
-      <div v-if="filteredCandidates.length === 0 && searchQuery" class="text-center py-10 text-charcoal/30 italic font-serif">
-        No books found in library matching "{{ searchQuery }}"
+      <div v-if="candidates.length === 0 && !loadingCandidates" class="text-center py-10 text-charcoal/30 italic font-serif">
+        The library is currently empty.
       </div>
     </div>
 
@@ -296,12 +286,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import DatePicker from '../components/DatePicker.vue';
 import type { Book, Meeting } from '../types';
 
-const searchQuery = ref('');
 const candidates = ref<Book[]>([]);
 const loadingCandidates = ref(true);
 const lastEmailPreview = ref<string | null>(null);
@@ -341,15 +330,6 @@ const newMeeting = ref<NewMeeting>({
   description: "",
   host: "",
   bookIds: [],
-});
-
-const filteredCandidates = computed(() => {
-  if (!searchQuery.value) return candidates.value;
-  const query = searchQuery.value.toLowerCase();
-  return candidates.value.filter(b => 
-    b.title?.toLowerCase().includes(query) || 
-    (typeof b.authors === 'string' && b.authors.toLowerCase().includes(query))
-  );
 });
 
 const inviteUser = async () => {
