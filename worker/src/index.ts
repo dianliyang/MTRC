@@ -8,6 +8,7 @@ import * as schema from './schema';
 type Bindings = {
   DB: D1Database;
   JWT_SECRET: string;
+  RESEND_API_KEY?: string;
   SIGNAL_API_URL?: string;
   SIGNAL_SENDER_NUMBER?: string;
 };
@@ -86,10 +87,35 @@ async function sendSignalMessage(env: Bindings, recipientNumber: string, message
   }
 }
 
-// Helper: Send Email (Stub - requires HTTP email provider like Resend/Mailchannels)
-async function sendEmail(to: string, subject: string, text: string) {
-  console.log(`[Email Stub] To: ${to}, Subject: ${subject}, Body: ${text}`);
-  // Implement Fetch to SendGrid/Resend API here
+// Helper: Send Email via Resend API
+async function sendEmail(env: Bindings, to: string, subject: string, text: string) {
+  if (!env.RESEND_API_KEY) {
+    console.log(`[Email Stub] To: ${to}, Subject: ${subject}, Body: ${text}`);
+    return;
+  }
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: 'MoreThan Reading Club <onboarding@resend.dev>', // Update this after verifying your domain
+        to: to.split(','),
+        subject: subject,
+        text: text,
+      }),
+    });
+
+    if (!res.ok) {
+      const error = await res.text();
+      console.error('Resend API error:', error);
+    }
+  } catch (e) {
+    console.error('Failed to send email:', e);
+  }
 }
 
 
@@ -202,10 +228,9 @@ app.post('/api/books/select', async (c) => {
     const phones = subs.filter(s => s.phoneNumber).map(s => s.phoneNumber as string);
 
     // Email Stub
-    if (emails.length > 0) {
-      await sendEmail(emails.join(','), `New Book: ${updated.title}`, `We are reading ${updated.title}`);
-    }
-
+          if (emails.length > 0) {
+            await sendEmail(c.env, emails.join(','), `New Book: ${updated.title}`, `We are reading ${updated.title}`);
+          }
     // Signal
     if (phones.length > 0) {
       const msg = `📚 New Book of the Month: "${updated.title}"! Join us: https://read.oili.dev`;
@@ -516,7 +541,7 @@ app.post('/api/admin/invite', async (c) => {
     }).returning().get();
 
     // In a real app, send invitation email here
-    await sendEmail(email, 'Invitation to MoreThan Reading Group', `Hello ${name}, you have been invited. Use your email and the provided password to login.`);
+    await sendEmail(c.env, email, 'Invitation to MoreThan Reading Group', `Hello ${name}, you have been invited. Use your email and the provided password to login.`);
 
     return c.json({ id: user.id, name: user.name, email: user.email, role: user.role });
   } catch (e) {
