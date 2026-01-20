@@ -32,6 +32,17 @@ const authMiddleware = async (c: any, next: any) => {
   return jwtMiddleware(c, next);
 };
 
+// Admin Middleware
+const adminMiddleware = async (c: any, next: any) => {
+  await authMiddleware(c, async () => {
+    const payload = c.get('jwtPayload');
+    if (payload?.role !== 'admin') {
+      return c.json({ error: 'Unauthorized: Admin access required' }, 403);
+    }
+    await next();
+  });
+};
+
 // Protect specific routes
 app.use('/api/books', async (c, next) => {
   if (c.req.method === 'POST') return authMiddleware(c, next);
@@ -49,6 +60,7 @@ app.use('/api/meetings/*', async (c, next) => {
   if (c.req.method === 'DELETE') return authMiddleware(c, next);
   await next();
 });
+app.use('/api/admin/*', adminMiddleware);
 
 // Helper: Get DB instance
 const getDB = (c: any) => drizzle(c.env.DB, { schema });
@@ -347,10 +359,10 @@ app.post('/api/meetings/:id/join', async (c) => {
 });
 
 // Auth
-app.post('/api/register', async (c) => {
+app.post('/api/admin/invite', async (c) => {
   const db = getDB(c);
   const body = await c.req.json();
-  const { email, password, name } = body;
+  const { email, password, name, role } = body;
 
   if (!email || !password || !name) return c.json({ error: 'Missing fields' }, 400);
 
@@ -366,17 +378,17 @@ app.post('/api/register', async (c) => {
       email,
       password: hashHex,
       name,
+      role: role || 'user',
       createdAt: new Date(),
       updatedAt: new Date()
     }).returning().get();
 
-    // Generate JWT
-    const secret = c.env.JWT_SECRET || 'fallback_secret';
-    const token = await sign({ id: user.id, email: user.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 }, secret);
+    // In a real app, send invitation email here
+    await sendEmail(email, 'Invitation to MoreThan Reading Group', `Hello ${name}, you have been invited. Use your email and the provided password to login.`);
 
-    return c.json({ id: user.id, name: user.name, email: user.email, token });
+    return c.json({ id: user.id, name: user.name, email: user.email, role: user.role });
   } catch (e) {
-    return c.json({ error: 'Registration failed' }, 400);
+    return c.json({ error: 'Invitation failed' }, 400);
   }
 });
 
@@ -399,9 +411,14 @@ app.post('/api/login', async (c) => {
 
   // Generate JWT
   const secret = c.env.JWT_SECRET || 'fallback_secret';
-  const token = await sign({ id: user.id, email: user.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 }, secret);
+  const token = await sign({ 
+    id: user.id, 
+    email: user.email, 
+    role: user.role, // Added role to payload
+    exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 
+  }, secret, 'HS256'); // Added algorithm explicitly for clarity
 
-  return c.json({ id: user.id, name: user.name, email: user.email, token });
+  return c.json({ id: user.id, name: user.name, email: user.email, role: user.role, token });
 });
 
 

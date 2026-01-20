@@ -1,0 +1,88 @@
+PRAGMA foreign_keys=OFF;--> statement-breakpoint
+CREATE TABLE `__new_books` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`google_id` text,
+	`title` text,
+	`authors` text,
+	`description` text,
+	`cover_url` text,
+	`language` text,
+	`page_count` integer,
+	`published_date` text,
+	`status` text DEFAULT 'candidate',
+	`selected_date` integer,
+	`suggester_id` text,
+	`created_at` integer DEFAULT '"2026-01-20T21:49:01.631Z"' NOT NULL,
+	`updated_at` integer DEFAULT '"2026-01-20T21:49:01.631Z"' NOT NULL
+);
+--> statement-breakpoint
+INSERT INTO `__new_books`("id", "google_id", "title", "authors", "description", "cover_url", "language", "page_count", "published_date", "status", "selected_date", "suggester_id", "created_at", "updated_at") SELECT "id", "google_id", "title", "authors", "description", "cover_url", "language", "page_count", "published_date", "status", "selected_date", "suggester_id", "created_at", "updated_at" FROM `books`;--> statement-breakpoint
+DROP TABLE `books`;--> statement-breakpoint
+ALTER TABLE `__new_books` RENAME TO `books`;--> statement-breakpoint
+PRAGMA foreign_keys=ON;--> statement-breakpoint
+CREATE UNIQUE INDEX `books_google_id_unique` ON `books` (`google_id`);--> statement-breakpoint
+CREATE TABLE `__new_comments` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`username` text,
+	`text` text,
+	`book_id` integer,
+	`created_at` integer DEFAULT '"2026-01-20T21:49:01.631Z"' NOT NULL,
+	`updated_at` integer DEFAULT '"2026-01-20T21:49:01.632Z"' NOT NULL,
+	FOREIGN KEY (`book_id`) REFERENCES `books`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+INSERT INTO `__new_comments`("id", "username", "text", "book_id", "created_at", "updated_at") SELECT "id", "username", "text", "book_id", "created_at", "updated_at" FROM `comments`;--> statement-breakpoint
+DROP TABLE `comments`;--> statement-breakpoint
+ALTER TABLE `__new_comments` RENAME TO `comments`;--> statement-breakpoint
+CREATE TABLE `__new_meetings` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`date` integer NOT NULL,
+	`topic` text NOT NULL,
+	`location` text DEFAULT 'Online',
+	`host` text DEFAULT 'Group Curator',
+	`description` text,
+	`created_at` integer DEFAULT '"2026-01-20T21:49:01.632Z"' NOT NULL,
+	`updated_at` integer DEFAULT '"2026-01-20T21:49:01.632Z"' NOT NULL
+);
+--> statement-breakpoint
+INSERT INTO `__new_meetings`("id", "date", "topic", "location", "host", "description", "created_at", "updated_at") SELECT "id", "date", "topic", "location", "host", "description", "created_at", "updated_at" FROM `meetings`;--> statement-breakpoint
+DROP TABLE `meetings`;--> statement-breakpoint
+ALTER TABLE `__new_meetings` RENAME TO `meetings`;--> statement-breakpoint
+CREATE TABLE `__new_participants` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`name` text NOT NULL,
+	`email` text,
+	`meeting_id` integer,
+	`created_at` integer DEFAULT '"2026-01-20T21:49:01.632Z"' NOT NULL,
+	`updated_at` integer DEFAULT '"2026-01-20T21:49:01.632Z"' NOT NULL,
+	FOREIGN KEY (`meeting_id`) REFERENCES `meetings`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+INSERT INTO `__new_participants`("id", "name", "email", "meeting_id", "created_at", "updated_at") SELECT "id", "name", "email", "meeting_id", "created_at", "updated_at" FROM `participants`;--> statement-breakpoint
+DROP TABLE `participants`;--> statement-breakpoint
+ALTER TABLE `__new_participants` RENAME TO `participants`;--> statement-breakpoint
+CREATE TABLE `__new_subscribers` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`email` text,
+	`phone_number` text,
+	`created_at` integer DEFAULT '"2026-01-20T21:49:01.632Z"' NOT NULL,
+	`updated_at` integer DEFAULT '"2026-01-20T21:49:01.632Z"' NOT NULL
+);
+--> statement-breakpoint
+INSERT INTO `__new_subscribers`("id", "email", "phone_number", "created_at", "updated_at") SELECT "id", "email", "phone_number", "created_at", "updated_at" FROM `subscribers`;--> statement-breakpoint
+DROP TABLE `subscribers`;--> statement-breakpoint
+ALTER TABLE `__new_subscribers` RENAME TO `subscribers`;--> statement-breakpoint
+CREATE TABLE `__new_users` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`email` text NOT NULL,
+	`password` text NOT NULL,
+	`name` text NOT NULL,
+	`role` text DEFAULT 'user' NOT NULL,
+	`created_at` integer DEFAULT '"2026-01-20T21:49:01.631Z"' NOT NULL,
+	`updated_at` integer DEFAULT '"2026-01-20T21:49:01.631Z"' NOT NULL
+);
+--> statement-breakpoint
+INSERT INTO `__new_users`("id", "email", "password", "name", "role", "created_at", "updated_at") SELECT "id", "email", "password", "name", "role", "created_at", "updated_at" FROM `users`;--> statement-breakpoint
+DROP TABLE `users`;--> statement-breakpoint
+ALTER TABLE `__new_users` RENAME TO `users`;--> statement-breakpoint
+CREATE UNIQUE INDEX `users_email_unique` ON `users` (`email`);

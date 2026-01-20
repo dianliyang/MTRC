@@ -1,10 +1,15 @@
 <template>
   <div class="max-w-5xl mx-auto">
     <div class="flex justify-between items-baseline mb-12">
-      <h1 class="font-serif text-4xl text-charcoal">Curator Dashboard</h1>
-      <span class="text-sm text-charcoal/50 font-medium"
-        >Manage the library</span
-      >
+      <div>
+        <h1 class="font-serif text-4xl text-charcoal">Curator Dashboard</h1>
+        <span class="text-sm text-charcoal/50 font-medium"
+          >Manage the library</span
+        >
+      </div>
+      <button @click="logout" class="text-[10px] uppercase tracking-widest font-bold text-charcoal/40 hover:text-accent transition-colors">
+        Logout
+      </button>
     </div>
 
     <!-- Search Section -->
@@ -69,6 +74,45 @@
           </div>
         </div>
       </transition>
+    </div>
+
+    <!-- Invite User Section (Admin Only) -->
+    <div v-if="currentUser?.role === 'admin'" class="mb-16 border-t border-charcoal/10 pt-12">
+      <div class="flex justify-between items-baseline mb-10">
+        <h2 class="font-serif text-3xl text-charcoal">Invite Curator</h2>
+        <span class="text-[10px] text-accent uppercase tracking-[0.2em] font-bold">Admin Only</span>
+      </div>
+
+      <div class="bg-white/40 backdrop-blur-md p-8 rounded-3xl border border-white shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          <div class="space-y-2">
+            <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40">Full Name</label>
+            <input v-model="inviteForm.name" type="text" placeholder="e.g. Jane Doe" class="w-full bg-transparent border-b border-charcoal/10 py-2 focus:outline-none focus:border-accent" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40">Email Address</label>
+            <input v-model="inviteForm.email" type="email" placeholder="jane@example.com" class="w-full bg-transparent border-b border-charcoal/10 py-2 focus:outline-none focus:border-accent" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40">Temporary Password</label>
+            <input v-model="inviteForm.password" type="text" placeholder="Minimum 8 characters" class="w-full bg-transparent border-b border-charcoal/10 py-2 focus:outline-none focus:border-accent" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40">Role</label>
+            <select v-model="inviteForm.role" class="w-full bg-transparent border-b border-charcoal/10 py-2 focus:outline-none focus:border-accent">
+              <option value="user">Curator</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </div>
+        </div>
+        <button 
+          @click="inviteUser" 
+          :disabled="inviting || !inviteForm.email || !inviteForm.password"
+          class="px-8 py-3 bg-charcoal text-sand text-[10px] uppercase tracking-[0.2em] font-bold rounded-full hover:bg-accent transition-all disabled:opacity-20"
+        >
+          {{ inviting ? 'Sending Invitation...' : 'Send Invitation' }}
+        </button>
+      </div>
     </div>
 
     <!-- Schedule Meeting Section -->
@@ -267,6 +311,34 @@ const lastEmailPreview = ref<string | null>(null);
 const meetings = ref<Meeting[]>([]);
 const creatingMeeting = ref(false);
 
+const currentUser = ref<any>(null);
+const inviting = ref(false);
+const inviteForm = ref({
+  name: '',
+  email: '',
+  password: '',
+  role: 'user'
+});
+
+const inviteUser = async () => {
+  inviting.value = true;
+  try {
+    await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/admin/invite`, inviteForm.value);
+    alert('Invitation sent successfully');
+    inviteForm.value = { name: '', email: '', password: '', role: 'user' };
+  } catch (e: any) {
+    alert(e.response?.data?.error || 'Failed to send invitation');
+  } finally {
+    inviting.value = false;
+  }
+};
+
+const logout = () => {
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('user');
+  window.location.href = '/login';
+};
+
 interface NewMeeting {
   topic: string;
   date: string;
@@ -398,6 +470,10 @@ const adjustTextareaHeight = (el: any) => {
 };
 
 onMounted(() => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    currentUser.value = JSON.parse(userStr);
+  }
   fetchCandidates();
   fetchMeetings();
 });
