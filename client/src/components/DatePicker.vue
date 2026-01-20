@@ -1,14 +1,14 @@
 <template>
-  <div class="relative">
+  <div class="relative group">
     <input 
       ref="fpInput"
       :value="modelValue"
       type="text" 
       placeholder="Select Date & Time" 
-      class="w-full bg-sand/30 border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-accent transition-colors cursor-pointer font-sans"
+      class="w-full bg-white/40 backdrop-blur-sm border-b border-charcoal/10 py-3.5 pl-4 pr-10 text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-accent transition-all cursor-pointer font-sans rounded-t-lg"
     />
-    <div class="absolute right-0 top-3 pointer-events-none text-charcoal/20">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-charcoal/20 group-focus-within:text-accent transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
     </div>
   </div>
 </template>
@@ -29,13 +29,15 @@ let fpInstance = null;
 onMounted(() => {
   fpInstance = flatpickr(fpInput.value, {
     enableTime: true,
-    time_24hr: false, // Re-enable AM/PM
+    time_24hr: false,
     dateFormat: "Z",
     altInput: true,
-    altFormat: "F j, Y - h:i K", // User friendly format with AM/PM
+    altFormat: "F j, Y - h:i K",
     defaultDate: props.modelValue,
     minDate: "today",
     disableMobile: "true",
+    nextArrow: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>',
+    prevArrow: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>',
     onChange: (selectedDates) => {
       if (selectedDates.length > 0) {
         emit('update:modelValue', selectedDates[0].toISOString());
