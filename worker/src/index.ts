@@ -88,7 +88,7 @@ async function sendSignalMessage(env: Bindings, recipientNumber: string, message
 }
 
 // Helper: Send Email via Resend API
-async function sendEmail(env: Bindings, to: string, subject: string, text: string) {
+async function sendEmail(env: Bindings, to: string, subject: string, text: string, html?: string) {
   if (!env.RESEND_API_KEY) {
     console.log(`[Email Stub] To: ${to}, Subject: ${subject}, Body: ${text}`);
     return;
@@ -102,10 +102,11 @@ async function sendEmail(env: Bindings, to: string, subject: string, text: strin
         'Authorization': `Bearer ${env.RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'MoreThan Reading Club <onboarding@resend.dev>', // Update this after verifying your domain
+        from: 'MoreThan Reading Club <onboarding@resend.dev>',
         to: to.split(','),
         subject: subject,
         text: text,
+        html: html || undefined,
       }),
     });
 
@@ -116,6 +117,50 @@ async function sendEmail(env: Bindings, to: string, subject: string, text: strin
   } catch (e) {
     console.error('Failed to send email:', e);
   }
+}
+
+// Helper: Generate Meeting Invitation HTML
+function generateMeetingEmail(meeting: any) {
+  const dateStr = new Date(meeting.date).toLocaleString('en-US', { 
+    weekday: 'long', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+  });
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f8f5f2; color: #2c2c2c; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 40px auto; background: #ffffff; padding: 40px; border-radius: 16px; border: 1px solid rgba(44,44,44,0.05); }
+        .brand { text-transform: uppercase; letter-spacing: 0.2em; font-size: 10px; font-weight: bold; color: #d97706; margin-bottom: 24px; }
+        h1 { font-family: Georgia, serif; font-size: 32px; margin-bottom: 16px; line-height: 1.2; }
+        .meta { color: rgba(44,44,44,0.6); font-size: 14px; margin-bottom: 32px; border-bottom: 1px solid #f8f5f2; padding-bottom: 24px; }
+        .description { line-height: 1.6; font-size: 16px; margin-bottom: 32px; }
+        .button { display: inline-block; padding: 16px 32px; background: #2c2c2c; color: #f8f5f2; text-decoration: none; border-radius: 100px; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; }
+        .footer { margin-top: 40px; font-size: 12px; color: rgba(44,44,44,0.4); text-align: center; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="brand">MoreThan Reading Club</div>
+        <h1>New Gathering Scheduled</h1>
+        <div class="meta">
+          <strong>Topic:</strong> ${meeting.topic}<br>
+          <strong>When:</strong> ${dateStr}<br>
+          <strong>Where:</strong> ${meeting.location}<br>
+          <strong>Hosted by:</strong> ${meeting.host}
+        </div>
+        <div class="description">
+          ${meeting.description.replace(/\n/g, '<br>')}
+        </div>
+        <a href="https://read.oili.dev/gatherings/${meeting.id}" class="button">View Details & Join</a>
+        <div class="footer">
+          You are receiving this because you subscribed to the MTRC newsletter.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
 }
 
 
@@ -473,6 +518,16 @@ app.post('/api/meetings', async (c) => {
         });
       }
     }
+
+    // Notify Subscribers
+    c.executionCtx.waitUntil((async () => {
+      const subs = await db.query.subscribers.findMany();
+      const emails = subs.filter(s => s.email).map(s => s.email as string);
+      if (emails.length > 0) {
+        const html = generateMeetingEmail(newMeeting);
+        await sendEmail(c.env, emails.join(','), `New Gathering: ${newMeeting.topic}`, `Join our next meeting about ${newMeeting.topic}`, html);
+      }
+    })());
 
     return c.json(newMeeting);
   } catch (e) {
