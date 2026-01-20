@@ -58,7 +58,7 @@ const subscribe = async () => {
   error.value = false;
   
   try {
-    await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/subscribe`, { 
+    await axios.post('/api/subscribe', { 
       email: email.value,
       phoneNumber: phone.value 
     });

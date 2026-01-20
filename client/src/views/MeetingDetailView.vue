@@ -135,7 +135,7 @@ const formatAuthors = (authorsStr: string | string[]) => {
 
 onMounted(async () => {
   try {
-    const res = await axios.get<Meeting>(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/meetings/${route.params.id}`);
+    const res = await axios.get<Meeting>(`/api/meetings/${route.params.id}`);
     meeting.value = res.data;
   } catch (e) {
     console.error(e);
@@ -148,7 +148,7 @@ const joinMeeting = async () => {
   if (!joinForm.value.name) return;
   joining.value = true;
   try {
-    await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/meetings/${route.params.id}/join`, joinForm.value);
+    await axios.post(`/api/meetings/${route.params.id}/join`, joinForm.value);
     joined.value = true;
   } catch (e) {
     alert('Failed to join');

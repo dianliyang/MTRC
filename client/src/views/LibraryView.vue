@@ -113,7 +113,7 @@ const filters = [
 
 const fetchBooks = async () => {
   try {
-    const res = await axios.get<Book[]>(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/books`);
+    const res = await axios.get<Book[]>('/api/books');
     books.value = res.data;
   } catch (e) {
     console.error(e);

@@ -79,7 +79,7 @@ const formatDate = (date: string) => {
 
 const fetchComments = async () => {
   try {
-    const res = await axios.get<Comment[]>(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/books/${props.bookId}/comments`);
+    const res = await axios.get<Comment[]>(`/api/books/${props.bookId}/comments`);
     comments.value = res.data;
   } catch (e) {
     console.error(e);
@@ -90,7 +90,7 @@ const postComment = async () => {
   if (!newComment.value.trim()) return;
   submitting.value = true;
   try {
-    await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/books/${props.bookId}/comments`, {
+    await axios.post(`/api/books/${props.bookId}/comments`, {
       text: newComment.value,
       username: username.value
     });

@@ -107,7 +107,7 @@ const formatTime = (date: string) => new Date(date).toLocaleTimeString('en-US', 
 
 const fetchMeetings = async () => {
   try {
-    const res = await axios.get<Meeting[]>(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/meetings`);
+    const res = await axios.get<Meeting[]>('/api/meetings');
     meetings.value = res.data;
   } catch (e) {
     console.error(e);

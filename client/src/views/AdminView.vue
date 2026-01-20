@@ -323,7 +323,7 @@ const inviteForm = ref({
 const inviteUser = async () => {
   inviting.value = true;
   try {
-    await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/admin/invite`, inviteForm.value);
+    await axios.post('/api/admin/invite', inviteForm.value);
     alert('Invitation sent successfully');
     inviteForm.value = { name: '', email: '', password: '', role: 'user' };
   } catch (e: any) {
@@ -383,7 +383,7 @@ const addCandidate = async (googleBook: any) => {
       localStorage.setItem('userId', userId);
     }
 
-    await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/books`, {
+    await axios.post('/api/books', {
       googleId: googleBook.id,
       title: info.title,
       authors: info.authors || [],
@@ -407,7 +407,7 @@ const addCandidate = async (googleBook: any) => {
 const fetchCandidates = async () => {
   loadingCandidates.value = true;
   try {
-    const res = await axios.get<Book[]>(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/books`);
+    const res = await axios.get<Book[]>('/api/books');
     candidates.value = res.data;
   } catch (e) {
     console.error(e);
@@ -427,7 +427,7 @@ const toggleBookSelection = (id: number) => {
 
 const fetchMeetings = async () => {
   try {
-    const res = await axios.get<Meeting[]>(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/meetings`);
+    const res = await axios.get<Meeting[]>('/api/meetings');
     meetings.value = res.data;
   } catch (e) {
     console.error(e);
@@ -437,7 +437,7 @@ const fetchMeetings = async () => {
 const createMeeting = async () => {
   creatingMeeting.value = true;
   try {
-    await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/meetings`, newMeeting.value);
+    await axios.post('/api/meetings', newMeeting.value);
     newMeeting.value = {
       topic: "",
       date: "",
@@ -457,7 +457,7 @@ const createMeeting = async () => {
 const deleteMeeting = async (id: number) => {
   if (!confirm("Cancel this gathering?")) return;
   try {
-    await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/meetings/${id}`);
+    await axios.delete(`/api/meetings/${id}`);
     await fetchMeetings();
   } catch (e) {
     alert("Failed to delete meeting");

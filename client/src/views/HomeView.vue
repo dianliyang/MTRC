@@ -105,7 +105,7 @@ const formatAuthors = (authorsStr: string | string[]) => {
 
 onMounted(async () => {
   try {
-    const res = await axios.get<Book[]>(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/books`);
+    const res = await axios.get<Book[]>('/api/books');
     // Find the book with status 'current'
     currentBook.value = res.data.find(b => b.status === 'current');
   } catch (e) {
