@@ -238,7 +238,11 @@ const formatAuthors = (authorsStr: string | string[]) => {
 };
 
 onMounted(() => {
-  currentUserId.value = localStorage.getItem('userId') || '';
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    const user = JSON.parse(userStr);
+    currentUserId.value = String(user.id);
+  }
   fetchBooks();
 });
 </script>

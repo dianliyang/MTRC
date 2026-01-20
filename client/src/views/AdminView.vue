@@ -33,9 +33,17 @@
             <div>
               <div class="flex justify-between items-start gap-2">
                 <h3 class="font-serif font-bold text-lg text-charcoal truncate">{{ book.title }}</h3>
-                <span class="text-[8px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full border border-charcoal/5 bg-charcoal/5 text-charcoal/40">
-                  {{ book.status }}
-                </span>
+                <div class="flex gap-1">
+                  <span 
+                    v-if="book.suggesterId && String(book.suggesterId) === currentUserId"
+                    class="text-[8px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full bg-accent text-white"
+                  >
+                    YOU
+                  </span>
+                  <span class="text-[8px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full border border-charcoal/5 bg-charcoal/5 text-charcoal/40">
+                    {{ book.status }}
+                  </span>
+                </div>
               </div>
               <p class="text-sm text-charcoal/60 truncate mb-1">{{ formatAuthors(book.authors) }}</p>
             </div>
@@ -300,6 +308,7 @@ const meetings = ref<Meeting[]>([]);
 const creatingMeeting = ref(false);
 
 const currentUser = ref<any>(null);
+const currentUserId = ref('');
 const inviting = ref(false);
 const inviteForm = ref({
   name: '',
@@ -465,6 +474,7 @@ onMounted(() => {
   const userStr = localStorage.getItem('user');
   if (userStr) {
     currentUser.value = JSON.parse(userStr);
+    currentUserId.value = String(currentUser.value.id);
   }
   fetchCandidates();
   fetchMeetings();
