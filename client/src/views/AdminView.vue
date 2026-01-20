@@ -12,68 +12,68 @@
       </button>
     </div>
 
-    <!-- Search Section -->
+    <!-- Library Management Search -->
     <div class="mb-16">
-      <div class="relative max-w-2xl">
+      <div class="flex justify-between items-baseline mb-6">
+        <h2 class="font-serif text-3xl text-charcoal">Library Management</h2>
+        <span class="text-[10px] text-charcoal/40 uppercase tracking-[0.2em] font-bold">Manage Collection</span>
+      </div>
+      
+      <div class="relative max-w-2xl mb-8">
         <input
           v-model="searchQuery"
-          @keyup.enter="searchBooks"
           type="text"
-          placeholder="Search for a title or author..."
-          class="w-full bg-white border-none py-4 pl-6 pr-32 shadow-sm rounded-lg text-lg focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-charcoal/30"
+          placeholder="Filter library by title or author..."
+          class="w-full bg-white border-none py-4 pl-6 pr-12 shadow-sm rounded-lg text-lg focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-charcoal/30"
         />
-        <button
-          @click="searchBooks"
-          class="absolute right-2 top-2 bottom-2 px-6 bg-charcoal text-white rounded-md text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
-          :disabled="searching"
-        >
-          {{ searching ? "..." : "Search" }}
-        </button>
+        <svg class="w-5 h-5 absolute right-4 top-4.5 text-charcoal/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
       </div>
 
-      <!-- Search Results -->
-      <transition name="fade">
+      <!-- Library List (Filtered) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div
-          v-if="searchResults.length > 0"
-          class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6"
+          v-for="book in filteredCandidates"
+          :key="book.id"
+          class="bg-white p-4 rounded-xl shadow-sm flex gap-5 group border border-transparent hover:border-accent/10 transition-all"
         >
-          <div
-            v-for="book in searchResults"
-            :key="book.id"
-            class="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all flex gap-5 group border border-transparent hover:border-accent/10"
-          >
-            <div
-              class="w-16 h-24 bg-gray-100 shrink-0 overflow-hidden rounded-sm shadow-inner"
-            >
-              <img
-                :src="book.volumeInfo.imageLinks?.thumbnail"
-                class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
-              />
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="font-serif font-bold text-lg text-charcoal truncate">
-                {{ book.volumeInfo.title }}
-              </h3>
-              <p class="text-sm text-charcoal/60 truncate mb-1">
-                {{ book.volumeInfo.authors?.join(", ") }}
-              </p>
-              <div
-                class="flex gap-2 text-[10px] uppercase tracking-wider text-charcoal/40 mb-3"
-              >
-                <span>{{ book.volumeInfo.language }}</span>
-                <span>•</span>
-                <span>{{ book.volumeInfo.pageCount }} pages</span>
+          <div class="w-16 h-24 bg-gray-100 shrink-0 overflow-hidden rounded shadow-inner">
+            <img :src="book.coverUrl" class="w-full h-full object-cover" />
+          </div>
+          <div class="flex-1 min-w-0 flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-start gap-2">
+                <h3 class="font-serif font-bold text-lg text-charcoal truncate">{{ book.title }}</h3>
+                <span class="text-[8px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full border border-charcoal/5 bg-charcoal/5 text-charcoal/40">
+                  {{ book.status }}
+                </span>
               </div>
+              <p class="text-sm text-charcoal/60 truncate mb-1">{{ formatAuthors(book.authors) }}</p>
+            </div>
+            
+            <div class="flex gap-4">
               <button
-                @click="addCandidate(book)"
-                class="text-xs font-bold uppercase tracking-wider text-accent hover:text-charcoal transition-colors"
+                v-if="book.status !== 'current'"
+                @click="selectBook(book)"
+                class="text-[10px] font-bold uppercase tracking-wider text-accent hover:text-charcoal transition-colors disabled:opacity-30"
+                :disabled="processingId === book.id"
               >
-                + Add to Library
+                {{ processingId === book.id ? 'Updating...' : 'Set Current' }}
+              </button>
+              <button
+                @click="deleteBook(book)"
+                class="text-[10px] font-bold uppercase tracking-wider text-red-400 hover:text-red-600 transition-colors disabled:opacity-30"
+                :disabled="processingId === book.id"
+              >
+                Delete
               </button>
             </div>
           </div>
         </div>
-      </transition>
+      </div>
+      
+      <div v-if="filteredCandidates.length === 0 && searchQuery" class="text-center py-10 text-charcoal/30 italic font-serif">
+        No books found in library matching "{{ searchQuery }}"
+      </div>
     </div>
 
     <!-- Invite User Section (Admin Only) -->
@@ -296,17 +296,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import DatePicker from '../components/DatePicker.vue';
 import type { Book, Meeting } from '../types';
 
 const searchQuery = ref('');
-const searchResults = ref<any[]>([]); // Google Books API results
-const searching = ref(false);
 const candidates = ref<Book[]>([]);
 const loadingCandidates = ref(true);
 const lastEmailPreview = ref<string | null>(null);
+const processingId = ref<number | null>(null);
 
 const meetings = ref<Meeting[]>([]);
 const creatingMeeting = ref(false);
@@ -319,19 +318,6 @@ const inviteForm = ref({
   password: '',
   role: 'user'
 });
-
-const inviteUser = async () => {
-  inviting.value = true;
-  try {
-    await axios.post('/api/admin/invite', inviteForm.value);
-    alert('Invitation sent successfully');
-    inviteForm.value = { name: '', email: '', password: '', role: 'user' };
-  } catch (e: any) {
-    alert(e.response?.data?.error || 'Failed to send invitation');
-  } finally {
-    inviting.value = false;
-  }
-};
 
 const logout = () => {
   localStorage.removeItem('authToken');
@@ -357,53 +343,27 @@ const newMeeting = ref<NewMeeting>({
   bookIds: [],
 });
 
-// Google Books API
-const searchBooks = async () => {
-  if (!searchQuery.value) return;
-  searching.value = true;
-  searchResults.value = [];
+const filteredCandidates = computed(() => {
+  if (!searchQuery.value) return candidates.value;
+  const query = searchQuery.value.toLowerCase();
+  return candidates.value.filter(b => 
+    b.title?.toLowerCase().includes(query) || 
+    (typeof b.authors === 'string' && b.authors.toLowerCase().includes(query))
+  );
+});
+
+const inviteUser = async () => {
+  inviting.value = true;
   try {
-    const res = await axios.get(
-      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery.value)}`,
-    );
-    searchResults.value = res.data.items || [];
-  } catch (e) {
-    alert("Search failed");
+    await axios.post('/api/admin/invite', inviteForm.value);
+    alert('Invitation sent successfully');
+    inviteForm.value = { name: '', email: '', password: '', role: 'user' };
+  } catch (e: any) {
+    alert(e.response?.data?.error || 'Failed to send invitation');
   } finally {
-    searching.value = false;
+    inviting.value = false;
   }
 };
-
-const addCandidate = async (googleBook: any) => {
-  try {
-    const info = googleBook.volumeInfo;
-    let userId = localStorage.getItem('userId');
-    if (!userId) {
-      userId = 'user_' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('userId', userId);
-    }
-
-    await axios.post('/api/books', {
-      googleId: googleBook.id,
-      title: info.title,
-      authors: info.authors || [],
-      description: info.description || "",
-      coverUrl: info.imageLinks?.thumbnail || "",
-      language: info.language || "",
-      pageCount: info.pageCount || 0,
-      publishedDate: info.publishedDate || "",
-      suggesterId: userId,
-    });
-    // Refresh list
-    searchResults.value = searchResults.value.filter(
-      (b) => b.id !== googleBook.id,
-    );
-    await fetchCandidates();
-  } catch (e) {
-    alert("Failed to add book");
-  }
-};
-
 const fetchCandidates = async () => {
   loadingCandidates.value = true;
   try {
@@ -413,6 +373,58 @@ const fetchCandidates = async () => {
     console.error(e);
   } finally {
     loadingCandidates.value = false;
+  }
+};
+
+const selectBook = async (book: Book) => {
+  if (!confirm(`Mark "${book.title}" as current? Notifications will be sent.`))
+    return;
+
+  processingId.value = book.id;
+  try {
+    const res = await axios.post('/api/books/select', {
+      id: book.id,
+    });
+    if (res.data.emailPreview) {
+      lastEmailPreview.value = res.data.emailPreview;
+    }
+    await fetchCandidates();
+  } catch (e) {
+    alert("Failed to update status");
+  } finally {
+    processingId.value = null;
+  }
+};
+
+const deleteBook = async (book: Book) => {
+  if (
+    !confirm(
+      `Are you sure you want to remove "${book.title}" from the library?`,
+    )
+  )
+    return;
+
+  processingId.value = book.id;
+  try {
+    await axios.delete(`/api/books/${book.id}`);
+    await fetchCandidates();
+  } catch (e) {
+    alert("Failed to delete book");
+  } finally {
+    processingId.value = null;
+  }
+};
+
+const formatAuthors = (authorsStr: string | string[]) => {
+  try {
+    if (!authorsStr) return "Unknown Author";
+    if (Array.isArray(authorsStr)) return authorsStr.join(", ");
+    if (typeof authorsStr === 'string' && authorsStr.startsWith("[")) {
+      return JSON.parse(authorsStr).join(", ");
+    }
+    return authorsStr;
+  } catch (e) {
+    return String(authorsStr);
   }
 };
 

@@ -5,18 +5,61 @@
       <p class="text-charcoal/50 text-lg font-light tracking-wide">Our history of shared worlds.</p>
     </div>
 
-    <!-- Controls -->
-    <div class="flex flex-col md:flex-row gap-4 justify-between items-center mb-12">
-      <div class="relative w-full md:w-96 group">
+    <!-- Search & Discovery Section -->
+    <div class="mb-20">
+      <div class="relative max-w-2xl mx-auto group">
         <input 
           v-model="searchQuery" 
+          @keyup.enter="searchBooks"
           type="text" 
-          placeholder="Search title or author..." 
-          class="w-full bg-white/40 backdrop-blur-sm border-b border-charcoal/10 py-3 pl-4 pr-10 text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-accent transition-colors font-sans"
+          placeholder="Search the world for your next read..." 
+          class="w-full bg-white/40 backdrop-blur-md border-b border-charcoal/10 py-5 pl-6 pr-32 text-charcoal text-xl placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-all font-serif"
         />
-        <svg class="w-4 h-4 absolute right-3 top-3.5 text-charcoal/20 group-focus-within:text-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <button 
+          @click="searchBooks"
+          :disabled="searching || !searchQuery"
+          class="absolute right-2 top-2 bottom-2 px-8 bg-charcoal text-sand text-[10px] uppercase tracking-[0.2em] font-bold rounded-full hover:bg-accent transition-all disabled:opacity-20"
+        >
+          {{ searching ? 'Searching...' : 'Search' }}
+        </button>
       </div>
 
+      <!-- Internet Search Results -->
+      <transition name="fade">
+        <div v-if="searchResults.length > 0" class="mt-12">
+          <div class="flex items-center gap-4 mb-8">
+             <h2 class="font-serif text-2xl text-charcoal">Discovery Results</h2>
+             <button @click="searchResults = []" class="text-[10px] uppercase tracking-widest font-bold text-charcoal/30 hover:text-accent">Clear</button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div 
+              v-for="book in searchResults" 
+              :key="book.id"
+              class="bg-white/60 backdrop-blur-md p-5 rounded-2xl border border-white flex gap-5 group hover:shadow-xl transition-all duration-500"
+            >
+              <div class="w-20 h-28 bg-gray-100 shrink-0 overflow-hidden rounded shadow-sm">
+                <img v-if="book.volumeInfo.imageLinks?.thumbnail" :src="book.volumeInfo.imageLinks.thumbnail" class="w-full h-full object-cover" />
+              </div>
+              <div class="flex-1 min-w-0 flex flex-col justify-between">
+                <div>
+                  <h3 class="font-serif font-bold text-base text-charcoal truncate">{{ book.volumeInfo.title }}</h3>
+                  <p class="text-xs text-charcoal/60 truncate">{{ book.volumeInfo.authors?.join(', ') }}</p>
+                </div>
+                <button 
+                  @click="addCandidate(book)"
+                  class="w-fit text-[10px] font-bold uppercase tracking-widest text-accent hover:text-charcoal transition-colors"
+                >
+                  + Add to Library
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </div>
+
+    <div class="flex flex-col md:flex-row gap-4 justify-between items-center mb-12 pt-12 border-t border-charcoal/5">
+      <h2 class="font-serif text-3xl text-charcoal">The Collection</h2>
       <div class="flex gap-2">
         <button 
           v-for="filter in filters" 
@@ -101,6 +144,8 @@ import type { Book } from '../types';
 const books = ref<Book[]>([]);
 const loading = ref(true);
 const searchQuery = ref('');
+const searchResults = ref<any[]>([]);
+const searching = ref(false);
 const activeFilter = ref('all');
 const currentUserId = ref('');
 
@@ -112,6 +157,7 @@ const filters = [
 ];
 
 const fetchBooks = async () => {
+  loading.value = true;
   try {
     const res = await axios.get<Book[]>('/api/books');
     books.value = res.data;
@@ -122,19 +168,57 @@ const fetchBooks = async () => {
   }
 };
 
+const searchBooks = async () => {
+  if (!searchQuery.value) return;
+  searching.value = true;
+  searchResults.value = [];
+  try {
+    const res = await axios.get(
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery.value)}`,
+    );
+    searchResults.value = res.data.items || [];
+  } catch (e) {
+    alert("Search failed");
+  } finally {
+    searching.value = false;
+  }
+};
+
+const addCandidate = async (googleBook: any) => {
+  try {
+    const info = googleBook.volumeInfo;
+    let userId = localStorage.getItem('userId');
+    if (!userId) {
+      userId = 'user_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('userId', userId);
+    }
+
+    await axios.post('/api/books', {
+      googleId: googleBook.id,
+      title: info.title,
+      authors: info.authors || [],
+      description: info.description || "",
+      coverUrl: info.imageLinks?.thumbnail || "",
+      language: info.language || "",
+      pageCount: info.pageCount || 0,
+      publishedDate: info.publishedDate || "",
+      suggesterId: userId,
+    });
+    // Refresh list
+    searchResults.value = searchResults.value.filter(
+      (b) => b.id !== googleBook.id,
+    );
+    await fetchBooks();
+  } catch (e) {
+    alert("Failed to add book");
+  }
+};
+
 const filteredBooks = computed(() => {
   let result = books.value;
 
   if (activeFilter.value !== 'all') {
     result = result.filter(b => b.status === activeFilter.value);
-  }
-
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    result = result.filter(b => 
-      b.title.toLowerCase().includes(query) || 
-      (typeof b.authors === 'string' && b.authors.toLowerCase().includes(query))
-    );
   }
 
   return result;
