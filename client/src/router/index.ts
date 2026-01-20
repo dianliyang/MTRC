@@ -27,7 +27,8 @@ const router = createRouter({
     {
       path: '/admin',
       name: 'admin',
-      component: AdminView
+      component: AdminView,
+      meta: { requiresAuth: true }
     },
     {
       path: '/gatherings',
@@ -41,5 +42,17 @@ const router = createRouter({
     }
   ]
 })
+
+router.beforeEach((to, _from, next) => {
+  const isAuthenticated = !!localStorage.getItem('authToken');
+  
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    next({ name: 'login' });
+  } else if (to.name === 'login' && isAuthenticated) {
+    next({ name: 'admin' });
+  } else {
+    next();
+  }
+});
 
 export default router
