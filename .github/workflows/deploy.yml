@@ -65,6 +65,6 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: morethan-reading-group # Replace with your Pages project name
+          projectName: mtrc # Updated to lowercase mtrc
           directory: client/dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
