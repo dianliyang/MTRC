@@ -7,21 +7,23 @@
 
     <!-- Search & Discovery Section -->
     <div class="mb-20">
-      <div class="relative max-w-2xl mx-auto group">
-        <input 
-          v-model="searchQuery" 
-          @keyup.enter="searchBooks"
-          type="text" 
-          placeholder="Search the world for your next read..." 
-          class="w-full bg-white/40 backdrop-blur-md border-b border-charcoal/10 py-5 pl-6 pr-32 text-charcoal text-xl placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-all font-serif"
-        />
-        <button 
-          @click="searchBooks"
-          :disabled="searching || !searchQuery"
-          class="absolute right-2 top-2 bottom-2 px-8 bg-charcoal text-sand text-[10px] uppercase tracking-[0.2em] font-bold rounded-full hover:bg-accent transition-all disabled:opacity-20"
-        >
-          {{ searching ? 'Searching...' : 'Search' }}
-        </button>
+      <div class="max-w-2xl mx-auto group">
+        <div class="relative flex flex-col md:block">
+          <input 
+            v-model="searchQuery" 
+            @keyup.enter="searchBooks"
+            type="text" 
+            placeholder="Search the world for your next read..." 
+            class="w-full bg-white/40 backdrop-blur-md border-b border-charcoal/10 py-4 md:py-5 pl-4 md:pl-6 pr-4 md:pr-32 text-lg md:text-xl text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-all font-serif"
+          />
+          <button 
+            @click="searchBooks"
+            :disabled="searching || !searchQuery"
+            class="mt-4 md:mt-0 md:absolute md:right-2 md:top-2 md:bottom-2 px-8 py-3 md:py-0 bg-charcoal text-sand text-[10px] uppercase tracking-[0.2em] font-bold rounded-full hover:bg-accent transition-all disabled:opacity-20 w-full md:w-auto"
+          >
+            {{ searching ? 'Searching...' : 'Search' }}
+          </button>
+        </div>
       </div>
 
       <!-- Internet Search Results -->
