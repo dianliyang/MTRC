@@ -146,30 +146,39 @@ span.flatpickr-weekday {
 /* Time Section Refinement */
 .flatpickr-time {
   margin-top: 16px;
-  border-top: 1px solid rgba(44, 44, 44, 0.08) !important;
+  border-top: 1px solid rgba(44, 44, 44, 0.06) !important;
   height: auto !important;
   line-height: 40px !important;
-  padding: 12px 10px 4px 10px !important;
-  background: rgba(44, 44, 44, 0.02);
-  border-radius: 0 0 20px 24px;
+  padding: 16px 10px !important;
+  background: rgba(44, 44, 44, 0.015);
+  border-radius: 0 0 24px 24px;
   display: flex !important;
   justify-content: center;
   align-items: center;
+  gap: 4px;
 }
 
 .flatpickr-time input {
-  font-weight: 800 !important;
-  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
   color: #2c2c2c !important;
-  background: transparent !important;
-  border-radius: 8px !important;
-  padding: 4px 0 !important;
+  background: rgba(44, 44, 44, 0.03) !important;
+  border-radius: 10px !important;
+  padding: 2px 0 !important;
   text-align: center !important;
+  transition: all 0.3s ease;
+  border: 1px solid transparent !important;
+}
+
+.flatpickr-time input:hover, .flatpickr-time input:focus {
+  background: rgba(217, 119, 6, 0.05) !important;
+  color: #d97706 !important;
+  border-color: rgba(217, 119, 6, 0.1) !important;
 }
 
 .flatpickr-time .numInputWrapper {
-  height: 40px !important;
-  flex: 0 1 60px !important; /* Fixed width for inputs to ensure centering */
+  height: 44px !important;
+  flex: 0 1 54px !important;
 }
 
 .flatpickr-time .numInputWrapper span {
@@ -177,28 +186,30 @@ span.flatpickr-weekday {
 }
 
 .flatpickr-time .flatpickr-time-separator {
-  font-weight: 800;
-  font-size: 1.2rem;
+  font-weight: 400;
+  font-size: 1.1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
+  width: 12px;
   opacity: 0.2;
 }
 
 .flatpickr-am-pm {
-  font-weight: 800 !important;
-  font-size: 0.9rem !important;
-  height: 40px !important;
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  height: 44px !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 12px !important;
-  border-radius: 8px !important;
-  transition: all 0.2s ease;
+  padding: 0 14px !important;
+  border-radius: 10px !important;
+  transition: all 0.3s ease;
   cursor: pointer;
-  flex: 0 0 60px !important; /* Fixed width for toggle */
-  margin-left: 10px;
+  flex: 0 0 54px !important;
+  margin-left: 6px;
+  background: rgba(44, 44, 44, 0.03) !important;
+  color: #2c2c2c !important;
 }
 
 .flatpickr-am-pm:hover {
