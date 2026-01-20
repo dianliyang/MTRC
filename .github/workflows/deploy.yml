@@ -57,9 +57,7 @@ jobs:
 
       - name: Build Client
         env:
-          # If your worker URL is static/known, you can set it here or use a secret
-          # VITE_API_URL: ${{ secrets.VITE_API_URL }} 
-          VITE_API_URL: https://morethan-worker.yourname.workers.dev
+          VITE_API_URL: ${{ vars.VITE_API_URL }} 
         run: |
           cd client
           npm run build
