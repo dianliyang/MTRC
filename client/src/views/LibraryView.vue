@@ -43,7 +43,12 @@
               <div class="flex-1 min-w-0 flex flex-col justify-between">
                 <div>
                   <h3 class="font-serif font-bold text-base text-charcoal truncate">{{ book.volumeInfo.title }}</h3>
-                  <p class="text-xs text-charcoal/60 truncate">{{ book.volumeInfo.authors?.join(', ') }}</p>
+                  <p class="text-xs text-charcoal/60 truncate mb-1">{{ book.volumeInfo.authors?.join(', ') }}</p>
+                  <div class="flex gap-2 text-[9px] uppercase tracking-widest text-charcoal/40">
+                    <span>{{ book.volumeInfo.language }}</span>
+                    <span>•</span>
+                    <span>{{ book.volumeInfo.pageCount || '?' }} pages</span>
+                  </div>
                 </div>
                 <button 
                   @click="addCandidate(book)"
