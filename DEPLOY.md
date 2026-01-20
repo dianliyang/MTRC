@@ -39,19 +39,41 @@ The backend is a serverless API running on Cloudflare Workers with a D1 SQLite d
 
 6.  **Apply Database Migrations:**
     *   Generate migrations: `npm run generate`
+    *   Apply to local: `npx wrangler d1 migrations apply morethan-db --local`
     *   Apply to production: `npm run migrate` (Select 'Yes' to confirm).
 
-7.  **Deploy the Worker:**
+7.  **Configure Secrets (JWT Authentication):**
+    *   Generate a secure secret: `openssl rand -base64 32`
+    *   **Local:** Create `worker/.dev.vars` and add `JWT_SECRET=your_secret`.
+    *   **Production:** Run `npx wrangler secret put JWT_SECRET` and paste your secret.
+
+8.  **Seed Initial Admin User:**
+    *   Registration is disabled for the public. You must seed the first admin user manually to access the dashboard.
+    *   **Local:** Run the following command in the `worker` directory (replace `password123` with a secure password):
+      ```bash
+      # Password hash for 'password123' (SHA-256): ef92b778ba7157222533ca94db9c687593c6629d84c17b5f4920400b1a030090
+      echo "INSERT INTO users (email, password, name, role, created_at, updated_at) VALUES ('admin@example.com', 'ef92b778ba7157222533ca94db9c687593c6629d84c17b5f4920400b1a030090', 'Initial Admin', 'admin', strftime('%s', 'now'), strftime('%s', 'now'));" > seed.sql
+      npx wrangler d1 execute morethan-db --local --file=seed.sql
+      ```
+    *   **Production:** Run the same command with the `--remote` flag:
+      ```bash
+      npx wrangler d1 execute morethan-db --remote --file=seed.sql
+      ```
+
+9.  **Deploy the Worker:**
     ```bash
     npm run deploy
     ```
     *   Copy the **Worker URL** from the output (e.g., `https://morethan-worker.yourname.workers.dev`).
 
----
-
 ## 2. Frontend (Client)
 
-The frontend is a Vue 3 SPA hosted on Cloudflare Pages (or any static host).
+The frontend is a Vue 3 SPA hosted on Cloudflare Pages.
+
+### Authentication & Roles
+*   **Public Access:** View-only access to books and gatherings.
+*   **Curator Access:** Requires login. Can suggest books and manage gatherings.
+*   **Admin Access:** Can invite new curators and administrators via the "Invite Curator" section in the Dashboard.
 
 ### Deployment Steps
 1.  **Navigate to the client directory:**

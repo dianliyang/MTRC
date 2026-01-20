@@ -16,6 +16,8 @@ This project is built as a monorepo with two main components:
 *   **Library Management:** Search Google Books and add them to your group's library.
 *   **Voting/Selection:** Mark books as "Current", "Read", or "Candidate".
 *   **Gatherings:** Schedule and manage reading group meetings.
+*   **Secure Authentication:** JWT-based login for curators and administrators.
+*   **Admin Controls:** Invite new members and manage roles directly from the dashboard.
 *   **Notifications:** Automated Email and Signal notifications when a new book is selected (via Worker).
 *   **Responsive Design:** Optimized for both desktop and mobile web.
 
@@ -27,6 +29,11 @@ Navigate to the worker directory to start the local backend.
 ```bash
 cd worker
 npm install
+# 1. Create .dev.vars with JWT_SECRET=your_secret
+# 2. Generate and apply migrations
+npm run generate
+npx wrangler d1 migrations apply morethan-db --local
+# 3. Start dev server
 npm run dev
 ```
 *   This will start the local Worker API (usually at `http://localhost:8787`).
@@ -40,7 +47,14 @@ npm install
 npm run dev
 ```
 *   The frontend will be available at `http://localhost:5173`.
-*   **Note:** You may need to update `client/.env` or `.env.local` to point `VITE_API_URL` to your local worker URL (e.g., `http://localhost:8787`) if it defaults to port 3000.
+
+## Troubleshooting
+
+### Database Issues
+If you encounter 500 errors on the API, ensure you have:
+1.  Run `npm run generate` and applied migrations (`--local` for dev, `--remote` for prod).
+2.  Configured `JWT_SECRET` in `.dev.vars` (local) or via `wrangler secret` (remote).
+3.  Seeded an initial admin user (see [DEPLOY.md](DEPLOY.md)).
 
 ## Deployment
 
