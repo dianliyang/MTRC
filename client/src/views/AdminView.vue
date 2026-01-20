@@ -31,19 +31,14 @@
           </div>
           <div class="flex-1 min-w-0 flex flex-col justify-between">
             <div>
+              <div v-if="book.suggesterId && String(book.suggesterId) === currentUserId" class="mb-1">
+                <span class="text-[7px] uppercase tracking-[0.2em] font-bold px-1.5 py-0.5 rounded bg-accent/10 text-accent">Added by you</span>
+              </div>
               <div class="flex justify-between items-start gap-2">
                 <h3 class="font-serif font-bold text-lg text-charcoal truncate">{{ book.title }}</h3>
-                <div class="flex gap-1">
-                  <span 
-                    v-if="book.suggesterId && String(book.suggesterId) === currentUserId"
-                    class="text-[8px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full bg-accent text-white"
-                  >
-                    YOU
-                  </span>
-                  <span class="text-[8px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full border border-charcoal/5 bg-charcoal/5 text-charcoal/40">
-                    {{ book.status }}
-                  </span>
-                </div>
+                <span class="text-[8px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full border border-charcoal/5 bg-charcoal/5 text-charcoal/40">
+                  {{ book.status }}
+                </span>
               </div>
               <p class="text-sm text-charcoal/60 truncate mb-1">{{ formatAuthors(book.authors) }}</p>
             </div>

@@ -91,12 +91,6 @@
         <!-- Status Badge -->
         <div class="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 flex gap-1 sm:gap-2">
           <span 
-            v-if="book.suggesterId && book.suggesterId === currentUserId"
-            class="text-[8px] sm:text-[9px] uppercase tracking-widest font-bold px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full border bg-accent text-white border-accent"
-          >
-            YOU
-          </span>
-          <span 
             class="text-[8px] sm:text-[9px] uppercase tracking-widest font-bold px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full border bg-white/80 backdrop-blur-md"
             :class="{
               'text-accent border-accent/20': book.status === 'current',
@@ -119,6 +113,9 @@
 
         <div class="text-left sm:text-center flex-1 flex flex-col justify-between py-1 sm:py-0">
           <div class="mb-2 sm:mb-4">
+            <div v-if="book.suggesterId && String(book.suggesterId) === currentUserId" class="mb-1">
+              <span class="text-[7px] uppercase tracking-[0.2em] font-bold px-1.5 py-0.5 rounded bg-accent/10 text-accent">Added by you</span>
+            </div>
             <h3 class="font-serif font-bold text-lg sm:text-xl text-charcoal leading-tight mb-1 sm:mb-2 line-clamp-2">{{ book.title }}</h3>
             <p class="text-[10px] sm:text-xs text-charcoal/50 uppercase tracking-wider font-medium">{{ formatAuthors(book.authors) }}</p>
           </div>
