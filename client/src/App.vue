@@ -43,6 +43,13 @@ const logout = () => {
           </RouterLink>
         </div>
 
+        <!-- Mobile Profile (Visible only on small screens) -->
+        <div v-if="currentUser" class="md:hidden pointer-events-auto">
+          <RouterLink to="/profile" class="w-10 h-10 rounded-full bg-white/40 backdrop-blur-xl border border-white/20 flex items-center justify-center text-[10px] font-bold text-charcoal/60 shadow-sm">
+            {{ currentUser.name?.[0].toUpperCase() || 'U' }}
+          </RouterLink>
+        </div>
+
         <!-- Desktop Navigation & Profile -->
         <div class="hidden md:flex items-center gap-4 pointer-events-auto">
           <div class="flex items-center gap-8 bg-white/40 backdrop-blur-xl border border-white/20 rounded-full px-8 py-4 shadow-sm">
@@ -162,6 +169,14 @@ const logout = () => {
           active-class="bg-white/10 is-active"
         >
           <span class="text-[10px] uppercase tracking-[0.2em] font-bold text-white/40 group-[.is-active]:text-accent">Curator</span>
+        </RouterLink>
+
+        <RouterLink 
+          to="/profile" 
+          class="flex-1 flex flex-col items-center py-2 rounded-full transition-all duration-300 group"
+          active-class="bg-white/10 is-active"
+        >
+          <span class="text-[10px] uppercase tracking-[0.2em] font-bold text-white/40 group-[.is-active]:text-accent">Me</span>
         </RouterLink>
       </div>
     </nav>
