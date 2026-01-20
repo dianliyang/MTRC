@@ -77,17 +77,17 @@
               </div>
             </div>
 
-            <!-- Join Form -->
             <div v-if="isFuture(meeting.date)" class="border-t border-charcoal/5 pt-8">
               <h4 class="text-xs font-bold uppercase tracking-widest text-charcoal/40 mb-4">Join this Gathering</h4>
               <div class="space-y-3">
                 <input v-model="joinForm.name" type="text" placeholder="Your Name" class="w-full bg-transparent border-b border-charcoal/10 py-2 focus:outline-none focus:border-accent transition-colors text-sm" />
+                <input v-model="joinForm.email" type="email" placeholder="Your Email" class="w-full bg-transparent border-b border-charcoal/10 py-2 focus:outline-none focus:border-accent transition-colors text-sm" />
                 <button 
                   @click="joinMeeting" 
                   class="w-full py-3 bg-charcoal text-white text-[10px] uppercase tracking-[0.2em] font-bold rounded-full hover:bg-accent transition-all duration-300 disabled:opacity-30"
-                  :disabled="!joinForm.name || joining"
+                  :disabled="!joinForm.name || !joinForm.email || joining"
                 >
-                  {{ joining ? 'Adding...' : 'Count Me In' }}
+                  {{ joining ? 'Processing...' : 'Send Confirmation Link' }}
                 </button>
               </div>
             </div>
@@ -129,13 +129,14 @@ onMounted(async () => {
 });
 
 const joinMeeting = async () => {
-  if (!joinForm.value.name) return;
+  if (!joinForm.value.name || !joinForm.value.email) return;
   joining.value = true;
   try {
     await axios.post(`/api/meetings/${route.params.id}/join`, joinForm.value);
-    joined.value = true;
+    alert('Please check your email to confirm your attendance. A magic link has been sent to you.');
+    joinForm.value = { name: '', email: '' };
   } catch (e) {
-    alert('Failed to join');
+    alert('Failed to send confirmation email. Please check your information.');
   } finally {
     joining.value = false;
   }

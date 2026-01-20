@@ -68,6 +68,8 @@ export const participants = sqliteTable('participants', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
   email: text('email'),
+  status: text('status').notNull().default('pending'), // 'pending', 'confirmed'
+  confirmationToken: text('confirmation_token').unique(),
   meetingId: integer('meeting_id').references(() => meetings.id, { onDelete: 'cascade' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(new Date()),

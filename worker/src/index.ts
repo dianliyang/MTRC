@@ -55,8 +55,8 @@ const adminMiddleware = async (c: any, next: any) => {
 
 // Global API Protection
 app.use('/api/*', async (c, next) => {
-  // Allow login to be public
-  if (c.req.path === '/api/login') return next();
+  // Allow login and join confirmation to be public
+  if (c.req.path === '/api/login' || c.req.path === '/api/confirm-join') return next();
   return authMiddleware(c, next);
 });
 
@@ -447,7 +447,12 @@ app.get('/api/meetings', async (c) => {
       }
       
       // Get participants
-      const parts = await db.query.participants.findMany({ where: eq(schema.participants.meetingId, m.id) });
+      const parts = await db.query.participants.findMany({ 
+        where: and(
+          eq(schema.participants.meetingId, m.id),
+          eq(schema.participants.status, 'confirmed')
+        )
+      });
       
       return {
         ...m,
@@ -483,7 +488,12 @@ app.get('/api/meetings/:id', async (c) => {
     if (bookIds.length > 0) {
        books = await db.query.books.findMany({ where: inArray(schema.books.id, bookIds) });
     }
-    const parts = await db.query.participants.findMany({ where: eq(schema.participants.meetingId, id) });
+    const parts = await db.query.participants.findMany({ 
+      where: and(
+        eq(schema.participants.meetingId, id),
+        eq(schema.participants.status, 'confirmed')
+      )
+    });
 
     return c.json({
       ...meeting,
@@ -547,6 +557,67 @@ app.delete('/api/meetings/:id', async (c) => {
   }
 });
 
+// Helper: Generate Confirmation Email HTML
+function generateConfirmationEmail(name: string, meeting: any, token: string) {
+  const confirmUrl = `https://read.oili.dev/confirm-join?token=${token}`;
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f8f5f2; color: #2c2c2c; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 40px auto; background: #ffffff; padding: 40px; border-radius: 16px; border: 1px solid rgba(44,44,44,0.05); }
+        .brand { text-transform: uppercase; letter-spacing: 0.2em; font-size: 10px; font-weight: bold; color: #d97706; margin-bottom: 24px; }
+        h1 { font-family: Georgia, serif; font-size: 28px; margin-bottom: 16px; line-height: 1.2; }
+        .meta { color: rgba(44,44,44,0.6); font-size: 14px; margin-bottom: 32px; }
+        .button { display: inline-block; padding: 16px 32px; background: #d97706; color: #ffffff; text-decoration: none; border-radius: 100px; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; }
+        .footer { margin-top: 40px; font-size: 12px; color: rgba(44,44,44,0.4); text-align: center; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="brand">MoreThan Reading Club</div>
+        <h1>Confirm Your Attendance</h1>
+        <p>Hello ${name}, please click the button below to confirm you are joining our gathering on <strong>${meeting.topic}</strong>.</p>
+        <div style="text-align: center; margin: 40px 0;">
+          <a href="${confirmUrl}" class="button">Confirm My Spot</a>
+        </div>
+        <div class="footer">
+          If you didn't request this, you can safely ignore this email.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+app.post('/api/confirm-join', async (c) => {
+  try {
+    const db = getDB(c);
+    const { token } = await c.req.json();
+    if (!token) return c.json({ error: 'Token is required' }, 400);
+
+    const participant = await db.query.participants.findFirst({
+      where: eq(schema.participants.confirmationToken, token)
+    });
+
+    if (!participant) return c.json({ error: 'Invalid or expired token' }, 404);
+
+    await db.update(schema.participants)
+      .set({ 
+        status: 'confirmed', 
+        confirmationToken: null, // One-time use
+        updatedAt: new Date() 
+      })
+      .where(eq(schema.participants.id, participant.id));
+
+    return c.json({ success: true, message: 'Attendance confirmed' });
+  } catch (e) {
+    return c.json({ error: 'Confirmation failed' }, 500);
+  }
+});
+
 app.post('/api/meetings/:id/join', async (c) => {
   try {
     const db = getDB(c);
@@ -554,17 +625,30 @@ app.post('/api/meetings/:id/join', async (c) => {
     if (isNaN(id)) return c.json({ error: 'Invalid ID' }, 400);
     const body = await c.req.json();
     
-    if (!body.name) return c.json({ error: 'Name is required' }, 400);
+    if (!body.name || !body.email) return c.json({ error: 'Name and Email are required' }, 400);
+
+    const meeting = await db.query.meetings.findFirst({ where: eq(schema.meetings.id, id) });
+    if (!meeting) return c.json({ error: 'Meeting not found' }, 404);
+
+    const token = crypto.randomUUID();
 
     const part = await db.insert(schema.participants).values({
       meetingId: id,
       name: body.name,
       email: body.email,
+      status: 'pending',
+      confirmationToken: token,
       createdAt: new Date(),
       updatedAt: new Date()
     }).returning().get();
 
-    return c.json(part);
+    // Send Magic Link
+    c.executionCtx.waitUntil((async () => {
+      const html = generateConfirmationEmail(body.name, meeting, token);
+      await sendEmail(c.env, body.email, `Confirm Join: ${meeting.topic}`, `Please confirm your spot for ${meeting.topic}`, html);
+    })());
+
+    return c.json({ success: true, message: 'Confirmation email sent' });
   } catch (e) {
     return c.json({ error: 'Failed to join meeting' }, 500);
   }
