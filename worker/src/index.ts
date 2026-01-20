@@ -23,6 +23,12 @@ app.use('*', cors({
   credentials: true,
 }));
 
+// Suppress Permissions-Policy warnings
+app.use('*', async (c, next) => {
+  await next();
+  c.header('Permissions-Policy', 'picture-in-picture=(), geolocation=(), camera=(), microphone=()');
+});
+
 // Auth Middleware for protected routes
 const authMiddleware = async (c: any, next: any) => {
   const jwtMiddleware = jwt({
