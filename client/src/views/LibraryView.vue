@@ -144,6 +144,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
+import { formatAuthors } from '../utils';
 import type { Book } from '../types';
 
 const books = ref<Book[]>([]);
@@ -228,19 +229,6 @@ const filteredBooks = computed(() => {
 
   return result;
 });
-
-const formatAuthors = (authorsStr: string | string[]) => {
-  try {
-    if (!authorsStr) return "Unknown";
-    if (Array.isArray(authorsStr)) return authorsStr.join(", ");
-    if (authorsStr.startsWith("[")) {
-      return JSON.parse(authorsStr).join(", ");
-    }
-    return authorsStr;
-  } catch (e) {
-    return String(authorsStr);
-  }
-};
 
 onMounted(() => {
   const userStr = localStorage.getItem('user');

@@ -96,14 +96,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
+import { isFuture, formatDate, formatTime } from '../utils';
 import type { Meeting } from '../types';
 
 const meetings = ref<Meeting[]>([]);
 const loading = ref(true);
-
-const isFuture = (date: string) => new Date(date) > new Date();
-const formatDate = (date: string) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-const formatTime = (date: string) => new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
 const fetchMeetings = async () => {
   try {

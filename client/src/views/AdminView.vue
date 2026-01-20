@@ -294,6 +294,7 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import DatePicker from '../components/DatePicker.vue';
+import { formatAuthors } from '../utils';
 import type { Book, Meeting } from '../types';
 
 const candidates = ref<Book[]>([]);
@@ -398,19 +399,6 @@ const deleteBook = async (book: Book) => {
     alert("Failed to delete book");
   } finally {
     processingId.value = null;
-  }
-};
-
-const formatAuthors = (authorsStr: string | string[]) => {
-  try {
-    if (!authorsStr) return "Unknown Author";
-    if (Array.isArray(authorsStr)) return authorsStr.join(", ");
-    if (typeof authorsStr === 'string' && authorsStr.startsWith("[")) {
-      return JSON.parse(authorsStr).join(", ");
-    }
-    return authorsStr;
-  } catch (e) {
-    return String(authorsStr);
   }
 };
 

@@ -227,29 +227,45 @@ app.post('/api/subscribe', async (c) => {
 
 // Comments
 app.get('/api/books/:id/comments', async (c) => {
+...
+// Likes
+app.get('/api/books/:id/like-status', async (c) => {
   const db = getDB(c);
-  const id = parseInt(c.req.param('id'));
-  const results = await db.query.comments.findMany({
-    where: eq(schema.comments.bookId, id),
-    orderBy: [desc(schema.comments.createdAt)]
+  const bookId = parseInt(c.req.param('id'));
+  const payload = c.get('jwtPayload');
+  
+  const existing = await db.query.likes.findFirst({
+    where: and(eq(schema.likes.userId, parseInt(payload.id)), eq(schema.likes.bookId, bookId))
   });
-  return c.json(results);
+
+  return c.json({ liked: !!existing });
 });
 
-app.post('/api/books/:id/comments', async (c) => {
+app.post('/api/books/:id/toggle-like', async (c) => {
   const db = getDB(c);
-  const id = parseInt(c.req.param('id'));
-  const body = await c.req.json();
-  
-  const result = await db.insert(schema.comments).values({
-    bookId: id,
-    username: body.username || 'Anonymous',
-    text: body.text,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }).returning().get();
+  const bookId = parseInt(c.req.param('id'));
+  const payload = c.get('jwtPayload');
+  const userId = parseInt(payload.id);
 
-  return c.json(result);
+  const existing = await db.query.likes.findFirst({
+    where: and(eq(schema.likes.userId, userId), eq(schema.likes.bookId, bookId))
+  });
+
+  if (existing) {
+    // Unlike
+    await db.delete(schema.likes).where(eq(schema.likes.id, existing.id));
+    await db.update(schema.books)
+      .set({ likesCount: Math.max(0, (await db.query.books.findFirst({ where: eq(schema.books.id, bookId) }))?.likesCount || 0) - 1 })
+      .where(eq(schema.books.id, bookId));
+    return c.json({ liked: false });
+  } else {
+    // Like
+    await db.insert(schema.likes).values({ userId, bookId, createdAt: new Date() });
+    await db.update(schema.books)
+      .set({ likesCount: ((await db.query.books.findFirst({ where: eq(schema.books.id, bookId) }))?.likesCount || 0) + 1 })
+      .where(eq(schema.books.id, bookId));
+    return c.json({ liked: true });
+  }
 });
 
 // Meetings

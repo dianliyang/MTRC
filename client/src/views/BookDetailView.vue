@@ -51,8 +51,28 @@
             </div>
           </div>
           
-          <div class="prose prose-lg text-charcoal-light font-light leading-relaxed mb-8 max-w-none text-left">
+          <div class="prose prose-lg text-charcoal-light font-light leading-relaxed mb-12 max-w-none text-left">
             {{ book.description?.replace(/<[^>]*>/g, '') }}
+          </div>
+
+          <!-- Like Button -->
+          <div class="flex justify-center md:justify-start">
+            <button 
+              @click="toggleLike"
+              class="group flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-500 border"
+              :class="userLiked ? 'bg-accent/10 border-accent/20 text-accent' : 'bg-white/40 border-charcoal/5 text-charcoal/40 hover:border-accent/20 hover:text-accent'"
+            >
+              <svg 
+                class="w-5 h-5 transition-transform group-hover:scale-125" 
+                :class="{ 'fill-current': userLiked }"
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+              </svg>
+              <span class="text-xs font-bold uppercase tracking-widest">{{ book.likesCount || 0 }}</span>
+            </button>
           </div>
         </div>
       </section>
@@ -72,22 +92,32 @@ import { ref, onMounted } from 'vue';
 import { useRoute, RouterLink } from 'vue-router';
 import axios from 'axios';
 import CommentSection from '../components/CommentSection.vue';
+import { formatAuthors } from '../utils';
 import type { Book } from '../types';
 
 const route = useRoute();
 const book = ref<Book | null>(null);
 const loading = ref(true);
+const userLiked = ref(false);
 
-const formatAuthors = (authorsStr: string | string[]) => {
+const fetchLikeStatus = async () => {
   try {
-    if (!authorsStr) return "Unknown Author";
-    if (Array.isArray(authorsStr)) return authorsStr.join(", ");
-    if (typeof authorsStr === 'string' && authorsStr.startsWith("[")) {
-      return JSON.parse(authorsStr).join(", ");
-    }
-    return authorsStr;
+    const res = await axios.get(`/api/books/${route.params.id}/like-status`);
+    userLiked.value = res.data.liked;
   } catch (e) {
-    return String(authorsStr);
+    console.error(e);
+  }
+};
+
+const toggleLike = async () => {
+  try {
+    const res = await axios.post(`/api/books/${route.params.id}/toggle-like`);
+    userLiked.value = res.data.liked;
+    // Refresh book to get updated count
+    const bookRes = await axios.get<Book>(`/api/books/${route.params.id}`);
+    book.value = bookRes.data;
+  } catch (e) {
+    console.error(e);
   }
 };
 
@@ -95,6 +125,7 @@ onMounted(async () => {
   try {
     const res = await axios.get<Book>(`/api/books/${route.params.id}`);
     book.value = res.data;
+    await fetchLikeStatus();
   } catch (e) {
     console.error(e);
   } finally {

@@ -87,23 +87,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
+import { formatAuthors } from '../utils';
 import type { Book } from '../types';
 
 const currentBook = ref<Book | undefined>(undefined);
 const loading = ref(true);
-
-const formatAuthors = (authorsStr: string | string[]) => {
-  try {
-    if (!authorsStr) return "Unknown Author";
-    if (Array.isArray(authorsStr)) return authorsStr.join(", ");
-    if (typeof authorsStr === 'string' && authorsStr.startsWith("[")) {
-      return JSON.parse(authorsStr).join(", ");
-    }
-    return authorsStr;
-  } catch (e) {
-    return String(authorsStr);
-  }
-};
 
 onMounted(async () => {
   try {

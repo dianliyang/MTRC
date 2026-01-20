@@ -11,6 +11,7 @@ export interface Book {
   status: 'candidate' | 'current' | 'read';
   selectedDate?: string;
   suggesterId?: string;
+  likesCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }

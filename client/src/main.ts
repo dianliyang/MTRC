@@ -18,6 +18,21 @@ axios.interceptors.request.use(config => {
   return config;
 });
 
+// Handle Session Expiration
+axios.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 const app = createApp(App)
 
 app.use(router)

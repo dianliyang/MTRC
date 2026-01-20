@@ -24,8 +24,16 @@ export const books = sqliteTable('books', {
   status: text('status').default('candidate'), // 'candidate', 'current', 'read'
   selectedDate: integer('selected_date', { mode: 'timestamp' }),
   suggesterId: text('suggester_id'),
+  likesCount: integer('likes_count').notNull().default(0),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(new Date()),
+});
+
+export const likes = sqliteTable('likes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  bookId: integer('book_id').references(() => books.id, { onDelete: 'cascade' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date()),
 });
 
 export const comments = sqliteTable('comments', {
