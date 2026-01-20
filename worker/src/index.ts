@@ -253,10 +253,6 @@ app.get('/api/meetings', async (c) => {
   // Drizzle relationship fetching
   const results = await db.query.meetings.findMany({
     orderBy: [desc(schema.meetings.date)],
-    with: {
-      // Manual relation fetching logic needed often with D1 if not strictly defined
-      // But we can fetch raw
-    }
   });
 
   // For complex relations like Many-to-Many in Drizzle/D1, manual queries are often safer or more explicit
