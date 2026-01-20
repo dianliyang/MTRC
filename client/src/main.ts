@@ -9,7 +9,10 @@ axios.defaults.baseURL = import.meta.env.VITE_API_URL;
 
 axios.interceptors.request.use(config => {
   const token = localStorage.getItem('authToken');
-  if (token) {
+  // Only add token to our own API requests
+  const isInternalRequest = config.url?.startsWith('/api') || (config.baseURL && config.url?.startsWith(config.baseURL));
+  
+  if (token && isInternalRequest) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
