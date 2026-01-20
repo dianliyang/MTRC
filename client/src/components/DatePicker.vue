@@ -92,13 +92,52 @@ onUnmounted(() => {
 
 .flatpickr-current-month {
   font-family: 'Playfair Display', serif !important;
-  font-size: 1.1rem !important;
+  font-size: 1.15rem !important;
   color: #2c2c2c !important;
-  padding-top: 10px !important;
+  padding-top: 12px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
 .flatpickr-monthDropdown-months {
-  font-weight: 700 !important;
+  font-weight: 800 !important;
+  padding: 4px 8px !important;
+  border-radius: 8px !important;
+  border: none !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  transition: background 0.3s ease;
+  appearance: none;
+}
+
+.flatpickr-monthDropdown-months:hover {
+  background: rgba(44, 44, 44, 0.05) !important;
+}
+
+.numInputWrapper {
+  width: 6ch !important;
+  padding: 4px 0 !important;
+  border-radius: 8px !important;
+  transition: background 0.3s ease;
+}
+
+.numInputWrapper:hover {
+  background: rgba(44, 44, 44, 0.05) !important;
+}
+
+.numInputWrapper input.cur-year {
+  font-weight: 400 !important;
+  color: #2c2c2c !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.numInputWrapper span {
+  display: none !important; /* Hide ugly default year arrows */
 }
 
 /* Weekdays */
