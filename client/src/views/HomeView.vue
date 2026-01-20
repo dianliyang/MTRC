@@ -61,12 +61,12 @@
             {{ currentBook.description?.replace(/<[^>]*>/g, '').slice(0, 400) }}...
           </div>
 
-          <div class="flex gap-4 justify-center md:justify-start">
-            <button class="px-6 py-3 bg-charcoal text-white text-sm tracking-widest uppercase font-medium shadow-lg hover:bg-accent transition-colors duration-300">
-              Buy Copy
+          <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+            <button class="px-10 py-4 bg-charcoal text-sand text-[10px] tracking-[0.2em] uppercase font-bold rounded-full shadow-lg hover:bg-accent transition-all duration-500">
+              Get Your Copy
             </button>
-            <button class="px-6 py-3 border border-charcoal/20 text-charcoal text-sm tracking-widest uppercase font-medium hover:border-accent hover:text-accent transition-colors duration-300">
-              Goodreads
+            <button class="px-10 py-4 border border-charcoal/10 text-charcoal/40 text-[10px] tracking-[0.2em] uppercase font-bold rounded-full hover:bg-charcoal/5 transition-all duration-500">
+              View on Goodreads
             </button>
           </div>
         </div>
