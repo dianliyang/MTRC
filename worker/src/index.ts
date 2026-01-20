@@ -89,79 +89,6 @@ async function sendSignalMessage(env: Bindings, recipientNumber: string, message
 
 // Helper: Send Email via Resend API
 async function sendEmail(env: Bindings, to: string, subject: string, text: string, html?: string) {
-  if (!env.RESEND_API_KEY) {
-    console.log(`[Email Stub] To: ${to}, Subject: ${subject}, Body: ${text}`);
-    return;
-  }
-
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: 'MoreThan Reading Club <onboarding@resend.dev>',
-        to: to.split(','),
-        subject: subject,
-        text: text,
-        html: html || undefined,
-      }),
-    });
-
-    if (!res.ok) {
-      const error = await res.text();
-      console.error('Resend API error:', error);
-    }
-  } catch (e) {
-    console.error('Failed to send email:', e);
-  }
-}
-
-// Helper: Generate Meeting Invitation HTML
-function generateMeetingEmail(meeting: any) {
-  const dateStr = new Date(meeting.date).toLocaleString('en-US', { 
-    weekday: 'long', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' 
-  });
-
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f8f5f2; color: #2c2c2c; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 40px auto; background: #ffffff; padding: 40px; border-radius: 16px; border: 1px solid rgba(44,44,44,0.05); }
-        .brand { text-transform: uppercase; letter-spacing: 0.2em; font-size: 10px; font-weight: bold; color: #d97706; margin-bottom: 24px; }
-        h1 { font-family: Georgia, serif; font-size: 32px; margin-bottom: 16px; line-height: 1.2; }
-        .meta { color: rgba(44,44,44,0.6); font-size: 14px; margin-bottom: 32px; border-bottom: 1px solid #f8f5f2; padding-bottom: 24px; }
-        .description { line-height: 1.6; font-size: 16px; margin-bottom: 32px; }
-        .button { display: inline-block; padding: 16px 32px; background: #2c2c2c; color: #f8f5f2; text-decoration: none; border-radius: 100px; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; }
-        .footer { margin-top: 40px; font-size: 12px; color: rgba(44,44,44,0.4); text-align: center; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="brand">MoreThan Reading Club</div>
-        <h1>New Gathering Scheduled</h1>
-        <div class="meta">
-          <strong>Topic:</strong> ${meeting.topic}<br>
-          <strong>When:</strong> ${dateStr}<br>
-          <strong>Where:</strong> ${meeting.location}<br>
-          <strong>Hosted by:</strong> ${meeting.host}
-        </div>
-        <div class="description">
-          ${meeting.description.replace(/\n/g, '<br>')}
-        </div>
-        <a href="https://read.oili.dev/gatherings/${meeting.id}" class="button">View Details & Join</a>
-        <div class="footer">
-          You are receiving this because you subscribed to the MTRC newsletter.
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-}
 
 
 // --- Routes ---
@@ -529,19 +456,35 @@ app.post('/api/meetings', async (c) => {
       }
     }
 
-    // Notify Subscribers
+    // Automated Bulk Invitation with Magic Links
     c.executionCtx.waitUntil((async () => {
       const subs = await db.query.subscribers.findMany();
-      const emails = subs.filter(s => s.email).map(s => s.email as string);
-      if (emails.length > 0) {
-        const html = generateMeetingEmail(newMeeting);
-        await sendEmail(c.env, emails.join(','), `New Gathering: ${newMeeting.topic}`, `Join our next meeting about ${newMeeting.topic}`, html);
+      if (subs.length === 0) return;
+
+      for (const sub of subs) {
+        if (!sub.email) continue;
+
+        const token = crypto.randomUUID();
+        // Create a pending participant record for the subscriber
+        await db.insert(schema.participants).values({
+          meetingId: newMeeting.id,
+          name: sub.email.split('@')[0], // Fallback name from email
+          email: sub.email,
+          status: 'pending',
+          confirmationToken: token,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+
+        const html = generateConfirmationEmail(sub.email.split('@')[0], newMeeting, token);
+        await sendEmail(c.env, sub.email, `Invitation: ${newMeeting.topic}`, `You are invited to our next gathering: ${newMeeting.topic}`, html);
       }
     })());
 
     return c.json(newMeeting);
   } catch (e) {
-    return c.json({ error: 'Failed to create meeting' }, 500);
+    console.error(e);
+    return c.json({ error: 'Failed to create meeting and send invitations' }, 500);
   }
 });
 
@@ -557,9 +500,12 @@ app.delete('/api/meetings/:id', async (c) => {
   }
 });
 
-// Helper: Generate Confirmation Email HTML
+// Helper: Generate Confirmation Email HTML (Invitation with Magic Link)
 function generateConfirmationEmail(name: string, meeting: any, token: string) {
   const confirmUrl = `https://read.oili.dev/confirm-join?token=${token}`;
+  const dateStr = new Date(meeting.date).toLocaleString('en-US', { 
+    weekday: 'long', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+  });
   
   return `
     <!DOCTYPE html>
@@ -570,21 +516,29 @@ function generateConfirmationEmail(name: string, meeting: any, token: string) {
         .container { max-width: 600px; margin: 40px auto; background: #ffffff; padding: 40px; border-radius: 16px; border: 1px solid rgba(44,44,44,0.05); }
         .brand { text-transform: uppercase; letter-spacing: 0.2em; font-size: 10px; font-weight: bold; color: #d97706; margin-bottom: 24px; }
         h1 { font-family: Georgia, serif; font-size: 28px; margin-bottom: 16px; line-height: 1.2; }
-        .meta { color: rgba(44,44,44,0.6); font-size: 14px; margin-bottom: 32px; }
-        .button { display: inline-block; padding: 16px 32px; background: #d97706; color: #ffffff; text-decoration: none; border-radius: 100px; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; }
+        .meta { color: rgba(44,44,44,0.6); font-size: 14px; margin-bottom: 32px; border-bottom: 1px solid #f8f5f2; padding-bottom: 24px; }
+        .button { display: inline-block; padding: 16px 32px; background: #2c2c2c; color: #f8f5f2 !important; text-decoration: none; border-radius: 100px; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; }
         .footer { margin-top: 40px; font-size: 12px; color: rgba(44,44,44,0.4); text-align: center; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="brand">MoreThan Reading Club</div>
-        <h1>Confirm Your Attendance</h1>
-        <p>Hello ${name}, please click the button below to confirm you are joining our gathering on <strong>${meeting.topic}</strong>.</p>
-        <div style="text-align: center; margin: 40px 0;">
-          <a href="${confirmUrl}" class="button">Confirm My Spot</a>
+        <h1>You're Invited</h1>
+        <p>Hello ${name}, we are gathering to discuss <strong>${meeting.topic}</strong>. We'd love for you to join us.</p>
+        
+        <div class="meta">
+          <strong>When:</strong> ${dateStr}<br>
+          <strong>Where:</strong> ${meeting.location}<br>
+          <strong>Hosted by:</strong> ${meeting.host}
         </div>
+
+        <div style="text-align: center; margin: 40px 0;">
+          <a href="${confirmUrl}" class="button">Confirm My Attendance</a>
+        </div>
+
         <div class="footer">
-          If you didn't request this, you can safely ignore this email.
+          Clicking the button will automatically add you to the participant list.
         </div>
       </div>
     </body>
