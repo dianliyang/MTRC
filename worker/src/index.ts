@@ -9,6 +9,7 @@ type Bindings = {
   DB: D1Database;
   JWT_SECRET: string;
   RESEND_API_KEY?: string;
+  FROM_EMAIL?: string;
   SIGNAL_API_URL?: string;
   SIGNAL_SENDER_NUMBER?: string;
 };
@@ -89,6 +90,36 @@ async function sendSignalMessage(env: Bindings, recipientNumber: string, message
 
 // Helper: Send Email via Resend API
 async function sendEmail(env: Bindings, to: string, subject: string, text: string, html?: string) {
+  if (!env.RESEND_API_KEY) {
+    console.log(`[Email Stub] To: ${to}, Subject: ${subject}, Body: ${text}`);
+    return;
+  }
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: env.FROM_EMAIL || 'MoreThan Reading Club <onboarding@resend.dev>',
+        to: to.split(','),
+        subject: subject,
+        text: text,
+        html: html || undefined,
+      }),
+    });
+
+    if (!res.ok) {
+      const error = await res.text();
+      console.error('Resend API Error:', error);
+      console.error('Note: Ensure your FROM_EMAIL domain is verified in Resend dashboard.');
+    }
+  } catch (e) {
+    console.error('Failed to send email:', e);
+  }
+}
 
 
 // --- Routes ---
@@ -200,9 +231,9 @@ app.post('/api/books/select', async (c) => {
     const phones = subs.filter(s => s.phoneNumber).map(s => s.phoneNumber as string);
 
     // Email Stub
-          if (emails.length > 0) {
-            await sendEmail(c.env, emails.join(','), `New Book: ${updated.title}`, `We are reading ${updated.title}`);
-          }
+    if (emails.length > 0) {
+      await sendEmail(c.env, emails.join(','), `New Book: ${updated.title}`, `We are reading ${updated.title}`);
+    }
     // Signal
     if (phones.length > 0) {
       const msg = `📚 New Book of the Month: "${updated.title}"! Join us: https://read.oili.dev`;
@@ -461,6 +492,14 @@ app.post('/api/meetings', async (c) => {
       const subs = await db.query.subscribers.findMany();
       if (subs.length === 0) return;
 
+      // Fetch related books for the email content
+      let relatedBooks: any[] = [];
+      if (body.bookIds && body.bookIds.length > 0) {
+        relatedBooks = await db.query.books.findMany({
+          where: inArray(schema.books.id, body.bookIds)
+        });
+      }
+
       for (const sub of subs) {
         if (!sub.email) continue;
 
@@ -476,7 +515,7 @@ app.post('/api/meetings', async (c) => {
           updatedAt: new Date()
         });
 
-        const html = generateConfirmationEmail(sub.email.split('@')[0], newMeeting, token);
+        const html = generateConfirmationEmail(sub.email.split('@')[0], newMeeting, token, relatedBooks);
         await sendEmail(c.env, sub.email, `Invitation: ${newMeeting.topic}`, `You are invited to our next gathering: ${newMeeting.topic}`, html);
       }
     })());
@@ -501,44 +540,74 @@ app.delete('/api/meetings/:id', async (c) => {
 });
 
 // Helper: Generate Confirmation Email HTML (Invitation with Magic Link)
-function generateConfirmationEmail(name: string, meeting: any, token: string) {
+function generateConfirmationEmail(name: string, meeting: any, token: string, books: any[] = []) {
   const confirmUrl = `https://read.oili.dev/confirm-join?token=${token}`;
   const dateStr = new Date(meeting.date).toLocaleString('en-US', { 
     weekday: 'long', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' 
   });
+
+  const booksHtml = books.length > 0 
+    ? `
+      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #f8f5f2;">
+        <div style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 11px; font-weight: bold; color: rgba(44,44,44,0.4); margin-bottom: 16px;">The Subject Matter</div>
+        ${books.map(b => `
+          <div style="margin-bottom: 16px;">
+            <div style="font-family: Georgia, serif; font-size: 18px; color: #2c2c2c;">${b.title}</div>
+            <div style="font-size: 14px; color: rgba(44,44,44,0.6);">by ${JSON.parse(b.authors || '[]').join(', ')}</div>
+          </div>
+        `).join('')}
+      </div>
+    ` : '';
   
   return `
     <!DOCTYPE html>
     <html>
     <head>
+      <meta charset="utf-8">
       <style>
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f8f5f2; color: #2c2c2c; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 40px auto; background: #ffffff; padding: 40px; border-radius: 16px; border: 1px solid rgba(44,44,44,0.05); }
-        .brand { text-transform: uppercase; letter-spacing: 0.2em; font-size: 10px; font-weight: bold; color: #d97706; margin-bottom: 24px; }
-        h1 { font-family: Georgia, serif; font-size: 28px; margin-bottom: 16px; line-height: 1.2; }
-        .meta { color: rgba(44,44,44,0.6); font-size: 14px; margin-bottom: 32px; border-bottom: 1px solid #f8f5f2; padding-bottom: 24px; }
-        .button { display: inline-block; padding: 16px 32px; background: #2c2c2c; color: #f8f5f2 !important; text-decoration: none; border-radius: 100px; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; }
-        .footer { margin-top: 40px; font-size: 12px; color: rgba(44,44,44,0.4); text-align: center; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f8f5f2; color: #2c2c2c; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+        .container { max-width: 600px; margin: 40px auto; background: #ffffff; padding: 48px; border-radius: 24px; border: 1px solid rgba(44,44,44,0.05); box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+        .brand { text-transform: uppercase; letter-spacing: 0.2em; font-size: 11px; font-weight: 800; color: #d97706; margin-bottom: 32px; }
+        h1 { font-family: Georgia, serif; font-size: 36px; margin-bottom: 24px; line-height: 1.1; font-weight: normal; }
+        p { font-size: 18px; line-height: 1.6; margin-bottom: 24px; color: #4a4a4a; }
+        .meta { color: #2c2c2c; font-size: 16px; margin-bottom: 40px; background: #fcfaf8; padding: 24px; border-radius: 16px; }
+        .meta-item { margin-bottom: 8px; }
+        .meta-label { text-transform: uppercase; font-size: 10px; letter-spacing: 0.1em; font-weight: 800; color: rgba(44,44,44,0.4); display: block; margin-bottom: 2px; }
+        .button-container { text-align: center; margin: 48px 0; }
+        .button { display: inline-block; padding: 20px 40px; background: #2c2c2c; color: #f8f5f2 !important; text-decoration: none; border-radius: 100px; font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.15em; }
+        .footer { margin-top: 48px; font-size: 13px; color: rgba(44,44,44,0.4); text-align: center; line-height: 1.5; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="brand">MoreThan Reading Club</div>
         <h1>You're Invited</h1>
-        <p>Hello ${name}, we are gathering to discuss <strong>${meeting.topic}</strong>. We'd love for you to join us.</p>
+        <p>Hello ${name}, we are gathering to discuss <strong>${meeting.topic}</strong>. We would be honored to have your perspective at the table.</p>
         
         <div class="meta">
-          <strong>When:</strong> ${dateStr}<br>
-          <strong>Where:</strong> ${meeting.location}<br>
-          <strong>Hosted by:</strong> ${meeting.host}
+          <div class="meta-item">
+            <span class="meta-label">When</span>
+            ${dateStr}
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Where</span>
+            ${meeting.location}
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Curator</span>
+            ${meeting.host}
+          </div>
         </div>
 
-        <div style="text-align: center; margin: 40px 0;">
+        ${booksHtml}
+
+        <div class="button-container">
           <a href="${confirmUrl}" class="button">Confirm My Attendance</a>
         </div>
 
         <div class="footer">
-          Clicking the button will automatically add you to the participant list.
+          One click will instantly add you to the participant list.<br>
+          We look forward to the conversation.
         </div>
       </div>
     </body>
