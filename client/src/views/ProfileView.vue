@@ -36,12 +36,19 @@
       </div>
 
       <!-- Action Footer -->
-      <div class="flex justify-center gap-4">
+      <div class="flex flex-col sm:flex-row justify-center gap-4">
         <button 
           @click="logout"
-          class="px-8 py-3 rounded-full border border-red-100 text-red-400 text-[10px] uppercase tracking-widest font-bold hover:bg-red-50 transition-all"
+          class="px-8 py-3 rounded-full border border-charcoal/10 text-charcoal/40 text-[10px] uppercase tracking-widest font-bold hover:bg-charcoal/5 transition-all"
         >
           Sign Out of Session
+        </button>
+        <button 
+          @click="deleteAccount"
+          :disabled="deleting"
+          class="px-8 py-3 rounded-full border border-red-100 text-red-400 text-[10px] uppercase tracking-widest font-bold hover:bg-red-50 transition-all disabled:opacity-30"
+        >
+          {{ deleting ? 'Deactivating...' : 'Delete My Account' }}
         </button>
       </div>
     </div>
@@ -50,8 +57,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import axios from 'axios';
 
 const user = ref<any>(null);
+const deleting = ref(false);
 
 onMounted(() => {
   const userStr = localStorage.getItem('user');
@@ -64,6 +73,23 @@ const logout = () => {
   localStorage.removeItem('authToken');
   localStorage.removeItem('user');
   window.location.href = '/login';
+};
+
+const deleteAccount = async () => {
+  if (!confirm('Are you sure you want to delete your account? This action is permanent and you will lose access immediately.')) {
+    return;
+  }
+
+  deleting.value = true;
+  try {
+    await axios.delete('/api/profile');
+    alert('Your account has been successfully deactivated.');
+    logout();
+  } catch (e) {
+    alert('Failed to delete account. Please try again.');
+  } finally {
+    deleting.value = false;
+  }
 };
 </script>
 

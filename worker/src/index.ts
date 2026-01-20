@@ -406,10 +406,15 @@ app.post('/api/login', async (c) => {
   const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
   const user = await db.query.users.findFirst({
-    where: and(eq(schema.users.email, email), eq(schema.users.password, hashHex))
+    where: and(
+      eq(schema.users.email, email), 
+      eq(schema.users.password, hashHex),
+      // Prevent login if account is marked as deleted
+      or(eq(schema.users.deletedAt, null), undefined)
+    )
   });
 
-  if (!user) return c.json({ error: 'Invalid credentials' }, 401);
+  if (!user || user.deletedAt) return c.json({ error: 'Invalid credentials or account deleted' }, 401);
 
   // Generate JWT
   const secret = c.env.JWT_SECRET || 'fallback_secret';
@@ -421,6 +426,31 @@ app.post('/api/login', async (c) => {
   }, secret, 'HS256'); // Added algorithm explicitly for clarity
 
   return c.json({ id: user.id, name: user.name, email: user.email, role: user.role, token });
+});
+
+// Profile Management
+app.delete('/api/profile', async (c) => {
+  const db = getDB(c);
+  const payload = c.get('jwtPayload');
+  
+  if (!payload?.id) return c.json({ error: 'Unauthorized' }, 401);
+
+  const userId = parseInt(payload.id);
+  const timestamp = Date.now();
+  
+  // Soft delete: update data to mark as deleted instead of removing
+  await db.update(schema.users)
+    .set({
+      email: `deleted_${userId}_${timestamp}@mtrc.internal`,
+      name: 'Deleted Curator',
+      password: `DELETED_${timestamp}_${Math.random().toString(36).substring(7)}`,
+      role: 'user', // Reset role
+      deletedAt: new Date(),
+      updatedAt: new Date()
+    })
+    .where(eq(schema.users.id, userId));
+
+  return c.json({ success: true, message: 'Account has been deactivated' });
 });
 
 

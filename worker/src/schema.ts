@@ -8,6 +8,7 @@ export const users = sqliteTable('users', {
   role: text('role').notNull().default('user'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(new Date()),
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
 });
 
 export const books = sqliteTable('books', {
