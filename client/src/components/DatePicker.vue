@@ -187,14 +187,14 @@ span.flatpickr-weekday {
   margin-top: 16px;
   border-top: 1px solid rgba(44, 44, 44, 0.06) !important;
   height: auto !important;
-  line-height: 40px !important;
+  line-height: 44px !important;
   padding: 16px 10px !important;
   background: rgba(44, 44, 44, 0.015);
   border-radius: 0 0 24px 24px;
   display: flex !important;
   justify-content: center;
   align-items: center;
-  gap: 4px;
+  gap: 6px !important;
 }
 
 .flatpickr-time input {
@@ -203,10 +203,11 @@ span.flatpickr-weekday {
   color: #2c2c2c !important;
   background: rgba(44, 44, 44, 0.03) !important;
   border-radius: 10px !important;
-  padding: 2px 0 !important;
+  padding: 0 !important;
   text-align: center !important;
   transition: all 0.3s ease;
   border: 1px solid transparent !important;
+  height: 44px !important;
 }
 
 .flatpickr-time input:hover, .flatpickr-time input:focus {
@@ -217,7 +218,7 @@ span.flatpickr-weekday {
 
 .flatpickr-time .numInputWrapper {
   height: 44px !important;
-  flex: 0 1 54px !important;
+  flex: 0 0 54px !important;
 }
 
 .flatpickr-time .numInputWrapper span {
@@ -230,8 +231,9 @@ span.flatpickr-weekday {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 12px;
+  width: 8px;
   opacity: 0.2;
+  height: 44px;
 }
 
 .flatpickr-am-pm {
@@ -241,14 +243,14 @@ span.flatpickr-weekday {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 14px !important;
+  padding: 0 !important;
   border-radius: 10px !important;
   transition: all 0.3s ease;
   cursor: pointer;
   flex: 0 0 54px !important;
-  margin-left: 6px;
   background: rgba(44, 44, 44, 0.03) !important;
   color: #2c2c2c !important;
+  margin: 0 !important;
 }
 
 .flatpickr-am-pm:hover {
