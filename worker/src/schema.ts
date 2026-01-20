@@ -60,6 +60,7 @@ export const meetings = sqliteTable('meetings', {
   location: text('location').default('Online'),
   host: text('host').default('Group Curator'),
   description: text('description'),
+  publishedAt: integer('published_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(new Date()),
 });

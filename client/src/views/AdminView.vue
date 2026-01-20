@@ -238,7 +238,15 @@
               </div>
 
               <div>
-                <div class="font-serif text-lg text-charcoal leading-tight">{{ meeting.topic }}</div>
+                <div class="flex items-center gap-3">
+                  <div class="font-serif text-lg text-charcoal leading-tight">{{ meeting.topic }}</div>
+                  <span 
+                    class="text-[7px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded border"
+                    :class="meeting.publishedAt ? 'border-accent/20 text-accent bg-accent/5' : 'border-charcoal/10 text-charcoal/30'"
+                  >
+                    {{ meeting.publishedAt ? 'Published' : 'Draft' }}
+                  </span>
+                </div>
                 <div class="text-[10px] text-charcoal/40 uppercase tracking-widest mt-1">
                   {{ new Date(meeting.date).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }} •
                   {{ meeting.location }}
@@ -249,12 +257,21 @@
               </div>
             </div>
             
-            <button
-              @click="deleteMeeting(meeting.id)"
-              class="w-full sm:w-auto py-3 sm:py-0 text-[10px] font-bold uppercase tracking-widest text-red-400 bg-red-50 sm:bg-transparent rounded-lg sm:rounded-none hover:text-red-600 transition-colors sm:opacity-0 group-hover:opacity-100 border border-red-100 sm:border-none"
-            >
-              Cancel Gathering
-            </button>
+            <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <button
+                v-if="!meeting.publishedAt"
+                @click="publishMeeting(meeting.id)"
+                class="w-full sm:w-auto px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-accent border border-accent/20 rounded-lg hover:bg-accent hover:text-white transition-all"
+              >
+                Publish & Invite
+              </button>
+              <button
+                @click="deleteMeeting(meeting.id)"
+                class="w-full sm:w-auto py-3 sm:py-0 text-[10px] font-bold uppercase tracking-widest text-red-400 bg-red-50 sm:bg-transparent rounded-lg sm:rounded-none hover:text-red-600 transition-colors sm:opacity-0 group-hover:opacity-100 border border-red-100 sm:border-none"
+              >
+                Cancel Gathering
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -447,6 +464,17 @@ const deleteMeeting = async (id: number) => {
     await fetchMeetings();
   } catch (e) {
     alert("Failed to delete meeting");
+  }
+};
+
+const publishMeeting = async (id: number) => {
+  if (!confirm("Are you sure you want to publish this gathering? This will send personalized invitations to all subscribers.")) return;
+  try {
+    await axios.post(`/api/meetings/${id}/publish`);
+    alert("Gathering published successfully. Invitations are being delivered.");
+    await fetchMeetings();
+  } catch (e) {
+    alert("Failed to publish gathering");
   }
 };
 

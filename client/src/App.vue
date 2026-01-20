@@ -70,7 +70,7 @@ const logout = () => {
               class="relative text-[11px] uppercase tracking-[0.2em] font-semibold transition-all duration-300 group text-charcoal/30 hover:text-charcoal"
               active-class="!text-charcoal is-active"
             >
-              <span>Gatherings</span>
+              <span>Events</span>
               <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-accent rounded-full scale-0 transition-transform duration-300 group-[.is-active]:scale-100"></div>
             </RouterLink>
 

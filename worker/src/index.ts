@@ -381,9 +381,12 @@ app.post('/api/books/:id/toggle-like', async (c) => {
 app.get('/api/meetings', async (c) => {
   try {
     const db = getDB(c);
+    const payload = c.get('jwtPayload');
+    const isAdmin = payload?.role === 'admin';
     
     // Drizzle relationship fetching
     const results = await db.query.meetings.findMany({
+      where: isAdmin ? undefined : isNotNull(schema.meetings.publishedAt),
       orderBy: [desc(schema.meetings.date)],
     });
 
@@ -434,6 +437,11 @@ app.get('/api/meetings/:id', async (c) => {
     const meeting = await db.query.meetings.findFirst({ where: eq(schema.meetings.id, id) });
     
     if (!meeting) return c.json({ error: 'Not found' }, 404);
+
+    const payload = c.get('jwtPayload');
+    if (!meeting.publishedAt && payload?.role !== 'admin') {
+      return c.json({ error: 'Meeting is not yet published' }, 403);
+    }
 
     // Fetch relations
     const mb = await db.select({ bookId: schema.meetingBooks.bookId })
@@ -487,43 +495,64 @@ app.post('/api/meetings', async (c) => {
       }
     }
 
-    // Automated Bulk Invitation with Magic Links
+    return c.json(newMeeting);
+  } catch (e) {
+    console.error(e);
+    return c.json({ error: 'Failed to create meeting draft' }, 500);
+  }
+});
+
+app.post('/api/meetings/:id/publish', async (c) => {
+  try {
+    const db = getDB(c);
+    const id = parseInt(c.req.param('id'));
+    if (isNaN(id)) return c.json({ error: 'Invalid ID' }, 400);
+
+    const meeting = await db.query.meetings.findFirst({ where: eq(schema.meetings.id, id) });
+    if (!meeting) return c.json({ error: 'Meeting not found' }, 404);
+    if (meeting.publishedAt) return c.json({ error: 'Already published' }, 400);
+
+    const mb = await db.select({ bookId: schema.meetingBooks.bookId })
+      .from(schema.meetingBooks)
+      .where(eq(schema.meetingBooks.meetingId, id));
+    
+    const bookIds = mb.map(r => r.bookId).filter((bid): bid is number => bid !== null);
+    
+    let relatedBooks: any[] = [];
+    if (bookIds.length > 0) {
+      relatedBooks = await db.query.books.findMany({
+        where: inArray(schema.books.id, bookIds)
+      });
+    }
+
+    // Set publishedAt
+    await db.update(schema.meetings)
+      .set({ publishedAt: new Date(), updatedAt: new Date() })
+      .where(eq(schema.meetings.id, id));
+
+    // Send Invitations
     c.executionCtx.waitUntil((async () => {
       const subs = await db.query.subscribers.findMany();
-      if (subs.length === 0) return;
-
-      // Fetch related books for the email content
-      let relatedBooks: any[] = [];
-      if (body.bookIds && body.bookIds.length > 0) {
-        relatedBooks = await db.query.books.findMany({
-          where: inArray(schema.books.id, body.bookIds)
-        });
-      }
-
       for (const sub of subs) {
         if (!sub.email) continue;
-
         const token = crypto.randomUUID();
-        // Create a pending participant record for the subscriber
         await db.insert(schema.participants).values({
-          meetingId: newMeeting.id,
-          name: sub.email.split('@')[0], // Fallback name from email
+          meetingId: id,
+          name: sub.email.split('@')[0],
           email: sub.email,
           status: 'pending',
           confirmationToken: token,
           createdAt: new Date(),
           updatedAt: new Date()
         });
-
-        const html = generateConfirmationEmail(sub.email.split('@')[0], newMeeting, token, relatedBooks);
-        await sendEmail(c.env, sub.email, `Invitation: ${newMeeting.topic}`, `You are invited to our next gathering: ${newMeeting.topic}`, html);
+        const html = generateConfirmationEmail(sub.email.split('@')[0], meeting, token, relatedBooks);
+        await sendEmail(c.env, sub.email, `Invitation: ${meeting.topic}`, `You are invited to our next gathering`, html);
       }
     })());
 
-    return c.json(newMeeting);
+    return c.json({ success: true, message: 'Meeting published' });
   } catch (e) {
-    console.error(e);
-    return c.json({ error: 'Failed to create meeting and send invitations' }, 500);
+    return c.json({ error: 'Failed to publish' }, 500);
   }
 });
 
