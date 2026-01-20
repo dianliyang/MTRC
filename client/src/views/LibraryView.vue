@@ -199,12 +199,18 @@ const addCandidate = async (googleBook: any) => {
       localStorage.setItem('userId', userId);
     }
 
+    // Try to get a higher resolution image
+    let highResCover = info.imageLinks?.thumbnail || "";
+    if (highResCover) {
+      highResCover = highResCover.replace('zoom=1', 'zoom=2').replace('http://', 'https://');
+    }
+
     await axios.post('/api/books', {
       googleId: googleBook.id,
       title: info.title,
       authors: info.authors || [],
       description: info.description || "",
-      coverUrl: info.imageLinks?.thumbnail || "",
+      coverUrl: highResCover,
       language: info.language || "",
       pageCount: info.pageCount || 0,
       publishedDate: info.publishedDate || "",

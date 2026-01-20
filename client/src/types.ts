@@ -23,6 +23,7 @@ export interface Meeting {
   location: string;
   host: string;
   description: string;
+  publishedAt: string | null;
   Books?: Book[];
   Participants?: Participant[];
   createdAt?: string;

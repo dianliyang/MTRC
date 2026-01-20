@@ -556,13 +556,17 @@ app.post('/api/meetings/:id/publish', async (c) => {
   }
 });
 
-app.delete('/api/meetings/:id', async (c) => {
+// Delete meeting (Admin only)
+app.delete('/api/meetings/:id', adminMiddleware, async (c) => {
   try {
     const db = getDB(c);
     const id = parseInt(c.req.param('id'));
     if (isNaN(id)) return c.json({ error: 'Invalid ID' }, 400);
+    
+    // Perform deletion - cascading handles meeting_books and participants
     await db.delete(schema.meetings).where(eq(schema.meetings.id, id));
-    return c.json({ success: true });
+    
+    return c.json({ success: true, message: 'Gathering cancelled and removed' });
   } catch (e) {
     return c.json({ error: 'Failed to delete meeting' }, 500);
   }

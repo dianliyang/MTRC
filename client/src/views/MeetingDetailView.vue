@@ -113,7 +113,6 @@ import type { Meeting } from '../types';
 const route = useRoute();
 const meeting = ref<Meeting | null>(null);
 const loading = ref(true);
-const joined = ref(false);
 const joining = ref(false);
 const joinForm = ref({ name: '', email: '' });
 
