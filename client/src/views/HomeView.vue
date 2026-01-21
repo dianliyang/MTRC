@@ -6,7 +6,7 @@
     
     <div v-else-if="currentBook" class="animate-fade-in">
       <!-- Hero Section -->
-      <section class="relative py-12 md:py-20 flex flex-col md:flex-row gap-12 items-center md:items-start">
+      <section class="relative pb-12 md:py-20 flex flex-col md:flex-row gap-12 items-center md:items-start">
         <!-- Cover Art with Reflection -->
         <router-link :to="`/library/${currentBook.id}`" class="relative group perspective-1000 w-64 md:w-80 shrink-0 cursor-pointer">
           <div class="relative z-10 rounded-sm shadow-2xl transition-transform duration-500 ease-out group-hover:rotate-y-6 transform-style-3d">
@@ -27,7 +27,7 @@
         </router-link>
 
         <!-- Book Details -->
-        <div class="flex-1 text-center md:text-left">
+        <div class="flex-1 text-left">
           <div class="inline-block mb-6 px-3 py-1 border border-accent/30 text-accent text-[10px] tracking-[0.2em] uppercase font-bold rounded-full">
             Current Selection
           </div>
@@ -77,7 +77,7 @@
     </div>
 
     <!-- Empty State -->
-    <div v-else class="h-[60vh] flex flex-col items-center justify-center text-center px-4">
+    <div v-else class="h-[60vh] flex flex-col items-start justify-center text-left px-4">
       <h2 class="font-serif text-3xl text-charcoal mb-4">Silence in the Library</h2>
       <p class="text-charcoal-light font-light max-w-md">No book has been selected for this month yet. The curators are deliberating.</p>
     </div>

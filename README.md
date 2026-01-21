@@ -6,7 +6,7 @@ A modern, full-stack reading group management platform.
 
 This project is built as a monorepo with two main components:
 
-*   **Client (`/client`)**: A **Vue 3** Single Page Application (SPA) built with **TypeScript** and **Vite**. It handles the user interface for browsing books, scheduling gatherings, and managing the library.
+*   **Client (`/client`)**: A **Vue 3** Single Page Application (SPA) built with **TypeScript** and **Vite**. It handles the user interface for browsing books, scheduling events, and managing the library.
 *   **Worker (`/worker`)**: A serverless backend built on **Cloudflare Workers**. It uses **Hono** (web framework) and **Drizzle ORM** to interact with a **Cloudflare D1** (SQLite) database.
 
 *(Note: The `server/` directory is a legacy Node.js/Express backend implementation and is currently deprecated in favor of the Cloudflare Worker).*
@@ -15,7 +15,7 @@ This project is built as a monorepo with two main components:
 
 *   **Library Management:** Search Google Books and add them to your group's library.
 *   **Voting/Selection:** Mark books as "Current", "Read", or "Candidate".
-*   **Gatherings:** Schedule and manage reading group meetings.
+*   **Events:** Schedule and manage reading group meetings.
 *   **Secure Authentication:** JWT-based login for curators and administrators.
 *   **Admin Controls:** Invite new members and manage roles directly from the dashboard.
 *   **Notifications:** Automated Email and Signal notifications when a new book is selected (via Worker).

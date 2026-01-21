@@ -1,6 +1,6 @@
 <template>
-  <div class="max-w-3xl mx-auto py-12 px-4 md:px-6 animate-fade-in">
-    <div class="mb-16">
+  <div class="max-w-3xl mx-auto pb-12 px-4 md:px-6 animate-fade-in">
+    <div class="mb-8">
       <h1 class="font-serif text-4xl text-charcoal mb-4">Data Privacy</h1>
       <p class="text-charcoal/50 font-light uppercase tracking-[0.2em] text-[10px]">Your Privacy & Information</p>
     </div>
@@ -18,11 +18,11 @@
         <div class="space-y-4">
           <div>
             <h3 class="text-[10px] uppercase tracking-widest font-bold text-charcoal/40 mb-2">Account Information</h3>
-            <p>Your name, email address, and encrypted password provided during registration or invitation.</p>
+            <p>We only collect your email address as a unique identifier. Your name and other details can be pseudonyms.</p>
           </div>
           <div>
             <h3 class="text-[10px] uppercase tracking-widest font-bold text-charcoal/40 mb-2">Interaction Data</h3>
-            <p>Information about the books you suggest, like, or comment on, and your attendance at gatherings.</p>
+            <p>Information about the books you suggest, like, or comment on, and your attendance at events. This data is linked only to your account identifier.</p>
           </div>
         </div>
       </section>
@@ -32,7 +32,7 @@
         <ul class="list-disc list-inside space-y-2 ml-2">
           <li>To facilitate book discussions and community interactions.</li>
           <li>To coordinate and manage event attendance.</li>
-          <li>To notify you of new book selections and upcoming gatherings.</li>
+          <li>To notify you of new book selections and upcoming events.</li>
           <li>We never sell your data or share it with third parties for marketing.</li>
         </ul>
       </section>

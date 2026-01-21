@@ -1,8 +1,8 @@
 <template>
   <div class="max-w-2xl mx-auto animate-fade-in">
-    <div class="text-center mb-12">
+    <div class="text-left mb-12">
       <h1 class="font-serif text-4xl text-charcoal mb-2">Your Profile</h1>
-      <p class="text-charcoal/50 font-light uppercase tracking-[0.2em] text-[10px]">Member Identity</p>
+      <p class="text-charcoal/50 font-light uppercase tracking-[0.2em] text-[10px]">{{ user?.role === 'admin' || user?.role === 'curator' ? 'Curator' : 'Member' }} Identity</p>
     </div>
 
     <div v-if="user" class="space-y-8">
@@ -14,7 +14,7 @@
           </div>
           
           <h2 class="font-serif text-2xl text-charcoal mb-1">{{ user.name }}</h2>
-          <span class="text-[10px] uppercase tracking-widest font-bold px-3 py-1 rounded-full bg-charcoal text-sand mb-8">
+          <span class="text-[10px] uppercase tracking-widest font-bold px-3 py-1 rounded-full bg-charcoal text-sand mb-8 capitalize">
             {{ user.role }}
           </span>
 
@@ -36,7 +36,7 @@
               <label class="text-[10px] uppercase tracking-widest font-bold text-charcoal/30">Account Status</label>
               <div class="flex items-center gap-2 text-accent">
                 <div class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
-                <p class="text-xs font-bold uppercase tracking-tighter">Active Curator</p>
+                <p class="text-xs font-bold uppercase tracking-tighter">Active {{ user.role === 'admin' || user.role === 'curator' ? 'Curator' : 'Member' }}</p>
               </div>
             </div>
           </div>
@@ -47,28 +47,28 @@
       <div class="bg-white/40 backdrop-blur-xl border border-white p-8 md:p-12 rounded-[2rem] shadow-sm">
         <h3 class="font-serif text-2xl text-charcoal mb-8">Security</h3>
         
-        <div class="space-y-6">
+        <form @submit.prevent="updatePassword" class="space-y-6">
           <div class="space-y-2">
             <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Current Password</label>
-            <input v-model="passwordForm.current" type="password" placeholder="Confirm existing password" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
+            <input v-model="passwordForm.current" type="password" autocomplete="current-password" placeholder="Confirm existing password" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
           </div>
           <div class="space-y-2">
             <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">New Password</label>
-            <input v-model="passwordForm.password" type="password" placeholder="Min. 8 characters" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
+            <input v-model="passwordForm.password" type="password" autocomplete="new-password" placeholder="Min. 8 characters" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
           </div>
           <div class="space-y-2">
             <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Confirm New Password</label>
-            <input v-model="passwordForm.confirm" type="password" placeholder="Repeat new password" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
+            <input v-model="passwordForm.confirm" type="password" autocomplete="new-password" placeholder="Repeat new password" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
           </div>
           
           <button 
-            @click="updatePassword"
+            type="submit"
             :disabled="updatingPassword || !isPasswordValid"
             class="w-full py-4 rounded-full bg-charcoal text-sand text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-accent transition-all disabled:opacity-20"
           >
             {{ updatingPassword ? 'Updating...' : 'Update Password' }}
           </button>
-        </div>
+        </form>
       </div>
 
       <!-- Data Privacy Section -->

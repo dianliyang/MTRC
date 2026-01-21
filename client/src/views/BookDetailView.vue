@@ -55,8 +55,8 @@
             {{ book.description?.replace(/<[^>]*>/g, '') }}
           </div>
 
-          <!-- Like Button -->
-          <div class="flex justify-center md:justify-start">
+          <!-- Actions -->
+          <div class="flex justify-center md:justify-start items-center gap-4">
             <button 
               @click="toggleLike"
               class="group flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-500 border"
@@ -71,7 +71,16 @@
               >
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
               </svg>
-              <span class="text-xs font-bold uppercase tracking-widest">{{ book.likesCount || 0 }}</span>
+              <span class="text-xs font-bold uppercase tracking-widest">{{ userLiked ? 'Liked' : 'Like' }}</span>
+            </button>
+
+            <button 
+              v-if="canDelete"
+              @click="deleteBook"
+              class="flex items-center gap-2 px-6 py-3 rounded-full border border-red-200 text-red-400 hover:bg-red-50 transition-all duration-300"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              <span class="text-xs font-bold uppercase tracking-widest">Remove</span>
             </button>
           </div>
         </div>
@@ -82,23 +91,41 @@
 
     <div v-else class="text-center py-20">
       <h2 class="font-serif text-2xl text-charcoal">Book not found</h2>
-      <RouterLink to="/library" class="text-accent underline mt-4 inline-block">Return to Collection</RouterLink>
+      <RouterLink to="/library" class="text-accent underline mt-4 inline-block">Return to Library</RouterLink>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRoute, RouterLink } from 'vue-router';
+import { ref, onMounted, computed } from 'vue';
+import { useRoute, useRouter, RouterLink } from 'vue-router';
 import axios from 'axios';
 import CommentSection from '../components/CommentSection.vue';
 import { formatAuthors } from '../utils';
 import type { Book } from '../types';
 
 const route = useRoute();
+const router = useRouter();
 const book = ref<Book | null>(null);
 const loading = ref(true);
 const userLiked = ref(false);
+const currentUser = ref<any>(null);
+
+const canDelete = computed(() => {
+  if (!currentUser.value || !book.value) return false;
+  // SuggesterId can be the numeric ID from the authenticated user
+  return currentUser.value.role === 'admin' || String(currentUser.value.id) === book.value.suggesterId;
+});
+
+const deleteBook = async () => {
+  if (!confirm('Are you sure you want to remove this book from the library?')) return;
+  try {
+    await axios.delete(`/api/books/${book.value?.id}`);
+    router.push('/library');
+  } catch (e) {
+    alert('Failed to delete book');
+  }
+};
 
 const fetchLikeStatus = async () => {
   try {
@@ -122,6 +149,9 @@ const toggleLike = async () => {
 };
 
 onMounted(async () => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) currentUser.value = JSON.parse(userStr);
+
   try {
     const res = await axios.get<Book>(`/api/books/${route.params.id}`);
     book.value = res.data;

@@ -5,7 +5,7 @@ export const users = sqliteTable('users', {
   email: text('email').notNull().unique(),
   password: text('password'), // Nullable initially for invited users
   name: text('name').notNull(),
-  role: text('role').notNull().default('user'),
+  role: text('role').notNull().default('member'),
   invitationToken: text('invitation_token').unique(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(new Date()),

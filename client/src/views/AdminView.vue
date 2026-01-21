@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-5xl mx-auto">
-    <div class="flex flex-col md:flex-row justify-between items-baseline mb-12 gap-6">
+    <div class="flex flex-col md:flex-row justify-between items-baseline mb-8 gap-6">
       <div>
         <h1 class="font-serif text-4xl text-charcoal tracking-tight">Admin Console</h1>
         <span class="text-sm text-charcoal/40 font-medium"
@@ -25,7 +25,7 @@
           Schedule
         </button>
         <button 
-          v-if="currentUser?.role === 'admin'"
+          v-if="currentUser?.role === 'admin' || currentUser?.role === 'curator'"
           @click="activeTab = 'curators'"
           class="flex-1 md:flex-none px-6 py-2.5 rounded-xl text-[10px] uppercase tracking-widest font-black transition-all duration-300 whitespace-nowrap"
           :class="activeTab === 'curators' ? 'bg-charcoal text-white shadow-md' : 'text-charcoal/40 hover:text-charcoal'"
@@ -143,6 +143,7 @@
                     <span class="text-[11px] font-bold text-charcoal tracking-tight">{{ book.title }}</span>
                     <span class="text-[9px] text-charcoal/40 tracking-widest font-medium">
                       {{ (Array.isArray(book.authors) ? book.authors : JSON.parse(book.authors as string || '[]')).join(' · ') }}
+                      <span v-if="book.likesCount" class="ml-1 text-accent">• {{ book.likesCount }} {{ book.likesCount === 1 ? 'like' : 'likes' }}</span>
                     </span>
                   </div>
                 </div>
@@ -195,10 +196,14 @@
             </div>
             <div class="space-y-2">
               <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Account Role</label>
-              <select v-model="inviteForm.role" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal focus:outline-none focus:border-accent transition-colors font-sans cursor-pointer appearance-none">
-                <option value="user">Curator</option>
-                <option value="admin">Administrator</option>
-              </select>
+              <BottomSelect 
+                v-model="inviteForm.role" 
+                :options="[
+                  { label: 'Member', value: 'user' },
+                  { label: 'Curator', value: 'admin' }
+                ]" 
+                label="Assign Role"
+              />
             </div>
           </div>
           <button 
@@ -219,6 +224,7 @@ import { ref, onMounted, watch } from 'vue';
 import axios from 'axios';
 import DatePicker from '../components/DatePicker.vue';
 import TimePicker from '../components/TimePicker.vue';
+import BottomSelect from '../components/BottomSelect.vue';
 import type { Book, Meeting } from '../types';
 
 const candidates = ref<Book[]>([]);
@@ -331,8 +337,7 @@ const createMeeting = async (publish = false) => {
 };
 
 const deleteMeeting = async (id: number) => {
-  if (!confirm("Delete gathering?")) return;
-  try {
+      if (!confirm("Delete event?")) return;  try {
     await axios.delete(`/api/meetings/${id}`);
     await fetchMeetings();
   } catch (e: any) {

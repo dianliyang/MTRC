@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { jwt, sign } from 'hono/jwt';
 import { drizzle } from 'drizzle-orm/d1';
-import { eq, desc, or, and, isNull, isNotNull, inArray } from 'drizzle-orm';
+import { eq, desc, or, and, isNull, isNotNull, inArray, sql } from 'drizzle-orm';
 import * as schema from './schema';
 
 type Bindings = {
@@ -48,8 +48,8 @@ const authMiddleware = async (c: any, next: any) => {
 // Admin Middleware (Assumes authMiddleware has already run)
 const adminMiddleware = async (c: any, next: any) => {
   const payload = c.get('jwtPayload');
-  if (payload?.role !== 'admin') {
-    return c.json({ error: 'Unauthorized: Admin access required' }, 403);
+  if (payload?.role !== 'curator' && payload?.role !== 'admin') {
+    return c.json({ error: 'Unauthorized: Curator access required' }, 403);
   }
   await next();
 };
@@ -181,6 +181,7 @@ app.post('/api/books', adminMiddleware, async (c) => {
       pageCount: body.pageCount || 0,
       publishedDate: body.publishedDate || '',
       suggesterId: userId,
+      likesCount: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
     }).returning().get();
@@ -192,11 +193,22 @@ app.post('/api/books', adminMiddleware, async (c) => {
 });
 
 // Delete book
-app.delete('/api/books/:id', adminMiddleware, async (c) => {
+app.delete('/api/books/:id', authMiddleware, async (c) => {
   try {
     const db = getDB(c);
     const id = parseInt(c.req.param('id'));
     if (isNaN(id)) return c.json({ error: 'Invalid ID' }, 400);
+
+    const payload = c.get('jwtPayload');
+    const book = await db.query.books.findFirst({ where: eq(schema.books.id, id) });
+    
+    if (!book) return c.json({ error: 'Book not found' }, 404);
+
+    // Allow deletion if admin OR if the user is the suggester
+    if (payload.role !== 'admin' && book.suggesterId !== String(payload.id)) {
+      return c.json({ error: 'Unauthorized' }, 403);
+    }
+
     await db.delete(schema.books).where(eq(schema.books.id, id));
     return c.json({ success: true });
   } catch (e) {
@@ -368,17 +380,21 @@ app.post('/api/books/:id/toggle-like', async (c) => {
     if (existing) {
       // Unlike
       await db.delete(schema.likes).where(eq(schema.likes.id, existing.id));
-      const book = await db.query.books.findFirst({ where: eq(schema.books.id, bookId) });
       await db.update(schema.books)
-        .set({ likesCount: Math.max(0, (book?.likesCount || 0) - 1), updatedAt: new Date() })
+        .set({ 
+          likesCount: sql`MAX(0, ${schema.books.likesCount} - 1)`, 
+          updatedAt: new Date() 
+        })
         .where(eq(schema.books.id, bookId));
       return c.json({ liked: false });
     } else {
       // Like
       await db.insert(schema.likes).values({ userId, bookId, createdAt: new Date() });
-      const book = await db.query.books.findFirst({ where: eq(schema.books.id, bookId) });
       await db.update(schema.books)
-        .set({ likesCount: (book?.likesCount || 0) + 1, updatedAt: new Date() })
+        .set({ 
+          likesCount: sql`${schema.books.likesCount} + 1`, 
+          updatedAt: new Date() 
+        })
         .where(eq(schema.books.id, bookId));
       return c.json({ liked: true });
     }
@@ -578,7 +594,7 @@ app.post('/api/meetings/:id/publish', adminMiddleware, async (c) => {
           updatedAt: new Date()
         });
         const html = generateConfirmationEmail(recipient.name, meeting, token, relatedBooks);
-        await sendEmail(c.env, recipient.email, `Invitation: ${meeting.topic}`, `You are invited to our next gathering`, html);
+        await sendEmail(c.env, recipient.email, `Invitation: ${meeting.topic}`, `You are invited to our next event`, html);
       }
     })());
 
@@ -598,7 +614,7 @@ app.delete('/api/meetings/:id', adminMiddleware, async (c) => {
     // Perform deletion - cascading handles meeting_books and participants
     await db.delete(schema.meetings).where(eq(schema.meetings.id, id));
     
-    return c.json({ success: true, message: 'Gathering cancelled and removed' });
+    return c.json({ success: true, message: 'Event cancelled and removed' });
   } catch (e) {
     return c.json({ error: 'Failed to delete meeting' }, 500);
   }
@@ -647,7 +663,7 @@ function generateConfirmationEmail(name: string, meeting: any, token: string, bo
       <div class="container">
         <div class="brand">MoreThan Reading Club</div>
         <h1>Invitation</h1>
-        <p>Hello ${name}, we are gathering to discuss <strong>${meeting.topic}</strong>. We would be honored to have your perspective at the table.</p>
+        <p>Hello ${name}, we are meeting to discuss <strong>${meeting.topic}</strong>. We would be honored to have your perspective at the table.</p>
         
         <div class="meta">
           <div class="meta-item">
@@ -743,7 +759,8 @@ app.post('/api/meetings/:id/join', async (c) => {
     if (isNaN(id)) return c.json({ error: 'Invalid ID' }, 400);
     const body = await c.req.json();
     
-    if (!body.name || !body.email) return c.json({ error: 'Name and Email are required' }, 400);
+    if (!body.email) return c.json({ error: 'Email is required' }, 400);
+    const name = body.name || `Member_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
     const meeting = await db.query.meetings.findFirst({ where: eq(schema.meetings.id, id) });
     if (!meeting) return c.json({ error: 'Meeting not found' }, 404);
@@ -752,7 +769,7 @@ app.post('/api/meetings/:id/join', async (c) => {
 
     const part = await db.insert(schema.participants).values({
       meetingId: id,
-      name: body.name,
+      name: name,
       email: body.email,
       status: 'pending',
       confirmationToken: token,
@@ -762,7 +779,7 @@ app.post('/api/meetings/:id/join', async (c) => {
 
     // Send Magic Link
     c.executionCtx.waitUntil((async () => {
-      const html = generateConfirmationEmail(body.name, meeting, token);
+      const html = generateConfirmationEmail(name, meeting, token);
       await sendEmail(c.env, body.email, `Confirm Join: ${meeting.topic}`, `Please confirm your spot for ${meeting.topic}`, html);
     })());
 
@@ -798,7 +815,7 @@ function generateCuratorInvitationEmail(name: string, token: string) {
         <div class="brand">MoreThan Reading Club</div>
         <h1>Curator Invitation</h1>
         <p>Hello ${name},</p>
-        <p>You have been invited to join the <strong>MoreThan Reading Club</strong> as a Curator. As a curator, you will help shape our collection and facilitate our monthly gatherings.</p>
+        <p>You have been invited to join the <strong>MoreThan Reading Club</strong> as a Curator. As a curator, you will help shape our library and facilitate our monthly events.</p>
         
         <p>Please click the button below to accept your invitation and set up your secure account access.</p>
 
@@ -819,9 +836,13 @@ function generateCuratorInvitationEmail(name: string, token: string) {
 app.post('/api/admin/invite', async (c) => {
   const db = getDB(c);
   const body = await c.req.json();
-  const { email, name, role } = body;
+  const { email, role } = body;
 
-  if (!email || !name) return c.json({ error: 'Missing fields' }, 400);
+  if (!email) return c.json({ error: 'Email is required' }, 400);
+  
+  const finalRole = role === 'admin' ? 'curator' : 'member';
+  const prefix = finalRole === 'curator' ? 'Curator' : 'Member';
+  const name = body.name || `${prefix}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
   const invitationToken = crypto.randomUUID();
 
@@ -829,7 +850,7 @@ app.post('/api/admin/invite', async (c) => {
     const user = await db.insert(schema.users).values({
       email,
       name,
-      role: role || 'user',
+      role: finalRole,
       invitationToken,
       createdAt: new Date(),
       updatedAt: new Date()

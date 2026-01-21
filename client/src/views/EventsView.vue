@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-4xl mx-auto">
-    <div class="text-center mb-16 animate-fade-in-up">
-      <h1 class="font-serif text-4xl text-charcoal mb-4">Gatherings</h1>
+    <div class="text-left mb-8 animate-fade-in-up">
+      <h1 class="font-serif text-4xl text-charcoal mb-4">Events</h1>
       <p class="text-charcoal/50 text-lg font-light tracking-wide">A timeline of our conversations.</p>
     </div>
 
@@ -10,7 +10,7 @@
     </div>
 
     <div v-else-if="meetings.length === 0" class="text-center py-10 text-charcoal/30 font-serif italic">
-      No gatherings scheduled.
+      No events scheduled.
     </div>
 
     <div v-else class="relative border-l border-charcoal/10 ml-4 md:ml-10 space-y-12 pb-12">
@@ -81,7 +81,7 @@
                   {{ meeting.location }}
                 </div>
                 
-                <RouterLink :to="`/gatherings/${meeting.id}`" class="text-[10px] uppercase tracking-widest font-bold text-accent hover:text-charcoal transition-colors">
+                <RouterLink :to="`/events/${meeting.id}`" class="text-[10px] uppercase tracking-widest font-bold text-accent hover:text-charcoal transition-colors">
                   View Details →
                 </RouterLink>
               </div>

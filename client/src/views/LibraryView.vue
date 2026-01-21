@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-6xl mx-auto animate-fade-in">
-    <div class="text-center mb-16">
-      <h1 class="font-serif text-4xl md:text-5xl text-charcoal mb-4">The Collection</h1>
+    <div class="text-left mb-8">
+      <h1 class="font-serif text-4xl md:text-5xl text-charcoal mb-4">The Library</h1>
       <p class="text-charcoal/50 text-lg font-light tracking-wide">Our history of shared worlds.</p>
     </div>
 
@@ -19,9 +19,10 @@
           <button 
             @click="searchBooks"
             :disabled="searching || !searchQuery"
-            class="mt-4 md:mt-0 md:absolute md:right-2 md:top-2 md:bottom-2 px-8 py-3 md:py-0 bg-charcoal text-sand text-[10px] uppercase tracking-[0.2em] font-bold rounded-full hover:bg-accent transition-all disabled:opacity-20 w-full md:w-auto"
+            class="mt-4 md:mt-0 md:absolute md:right-2 md:top-2 md:bottom-2 px-8 py-3 md:py-0 bg-charcoal text-sand text-[10px] uppercase tracking-[0.2em] font-bold rounded-full hover:bg-accent transition-all disabled:opacity-20 w-full md:w-auto flex items-center justify-center gap-2"
           >
-            {{ searching ? 'Searching...' : 'Search' }}
+            <div v-if="searching" class="w-3 h-3 border-2 border-sand/30 border-t-sand rounded-full animate-spin"></div>
+            <span>{{ searching ? 'Searching' : 'Search' }}</span>
           </button>
         </div>
       </div>
@@ -66,7 +67,7 @@
     </div>
 
     <div class="flex flex-col md:flex-row gap-4 justify-between items-center mb-12 pt-12 border-t border-charcoal/5">
-      <h2 class="font-serif text-3xl text-charcoal">The Collection</h2>
+      <h2 class="font-serif text-3xl text-charcoal">The Library</h2>
       <div class="flex gap-2">
         <button 
           v-for="filter in filters" 
@@ -195,7 +196,7 @@ const addCandidate = async (googleBook: any) => {
     const info = googleBook.volumeInfo;
     let userId = localStorage.getItem('userId');
     if (!userId) {
-      userId = 'user_' + Math.random().toString(36).substr(2, 9);
+      userId = 'Member_' + Math.random().toString(36).substring(2, 7).toUpperCase();
       localStorage.setItem('userId', userId);
     }
 

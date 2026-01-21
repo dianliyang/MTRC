@@ -1,13 +1,16 @@
-<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Left Book Spine -->
-  <path d="M40 30L40 90" stroke="#2c2c2c" stroke-width="6" stroke-linecap="round"/>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Squircle (Charcoal) -->
+  <rect width="512" height="512" rx="120" fill="#2c2c2c"/>
   
-  <!-- Right Book Spine -->
-  <path d="M80 30L80 90" stroke="#2c2c2c" stroke-width="6" stroke-linecap="round"/>
+  <!-- Abstract "More Than" Symbol (The dynamic curve) -->
+  <path d="M100 340C100 340 180 440 256 340C332 240 412 340 412 340" stroke="#d97706" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/>
   
-  <!-- The Connecting Curve (Open Book / M shape implied) -->
-  <path d="M40 90C40 90 60 100 80 90" stroke="#2c2c2c" stroke-width="3" stroke-linecap="round" stroke-opacity="0.5"/>
+  <!-- Stylized "M" / Open Book (Sand) -->
+  <path d="M120 340V140L256 240L392 140V340" stroke="#f8f5f2" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
   
-  <!-- The Accent Dot (The Gathering Point) -->
-  <circle cx="60" cy="60" r="12" fill="#d97706"/>
+  <!-- Center Vertical Spine (Subtle) -->
+  <path d="M256 240V340" stroke="#f8f5f2" stroke-width="20" stroke-linecap="round" stroke-opacity="0.2"/>
+  
+  <!-- Innovation Point (The Gathering) -->
+  <circle cx="256" cy="340" r="28" fill="#d97706"/>
 </svg>

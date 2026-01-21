@@ -35,11 +35,10 @@ const logout = () => {
     <nav class="fixed top-0 w-full z-50 px-4 md:px-6 py-4 md:py-6 pointer-events-none">
       <div class="max-w-6xl mx-auto flex justify-between items-center">
         <!-- Logo/Brand Container -->
-        <div class="bg-white/40 backdrop-blur-xl border border-white/20 rounded-full px-4 md:px-8 py-3 md:py-4 pointer-events-auto transition-all duration-500 hover:bg-white/60 shadow-sm">
-          <RouterLink to="/" class="flex items-center gap-3 md:gap-4 group">
-            <img src="/logo.svg" alt="Logo" class="w-6 h-6 md:w-8 md:h-8 opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" />
-            <span class="font-brand font-normal text-lg md:text-xl tracking-[0.1em] text-charcoal uppercase hidden sm:inline-block">MoreThanReadingClub</span>
-            <span class="font-brand font-normal text-lg tracking-[0.1em] text-charcoal uppercase sm:hidden">MTRC</span>
+        <div class="hidden md:block bg-white/40 backdrop-blur-xl border border-white/20 rounded-full px-8 py-4 pointer-events-auto transition-all duration-500 hover:bg-white/60 shadow-sm">
+          <RouterLink to="/" class="flex items-center gap-4 group">
+            <img src="/logo.svg" alt="Logo" class="w-8 h-8 opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" />
+            <span class="font-brand font-normal text-xl tracking-[0.1em] text-charcoal uppercase inline-block">MoreThanReadingClub</span>
           </RouterLink>
         </div>
 
@@ -66,7 +65,7 @@ const logout = () => {
             </RouterLink>
 
             <RouterLink 
-              to="/gatherings" 
+              to="/events" 
               class="relative text-[11px] uppercase tracking-[0.2em] font-semibold transition-all duration-300 group text-charcoal/30 hover:text-charcoal"
               active-class="!text-charcoal is-active"
             >
@@ -75,7 +74,7 @@ const logout = () => {
             </RouterLink>
 
             <RouterLink 
-              v-if="currentUser?.role === 'admin'"
+              v-if="currentUser?.role === 'admin' || currentUser?.role === 'curator'"
               to="/admin" 
               class="relative text-[11px] uppercase tracking-[0.2em] font-semibold transition-all duration-300 group text-charcoal/30 hover:text-charcoal"
               active-class="!text-charcoal is-active"
@@ -130,64 +129,69 @@ const logout = () => {
     </nav>
 
     <!-- Mobile Bottom Navigation -->
-    <nav class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 md:hidden">
-      <div class="bg-charcoal/90 backdrop-blur-2xl border border-white/10 rounded-full px-2 py-2 flex items-center gap-1 shadow-2xl">
+    <nav class="fixed bottom-6 left-6 right-6 z-50 md:hidden backdrop-blur-3xl rounded-full">
+      <div class="bg-charcoal/70 border border-white/10 rounded-full p-1.5 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
         <RouterLink 
           to="/" 
-          class="p-3 rounded-full transition-all duration-300 group"
+          class="flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-full transition-all duration-300 group"
           active-class=""
           exact-active-class="bg-white/10 is-active"
         >
           <svg class="w-5 h-5 text-white/40 group-[.is-active]:text-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.967 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.967 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"></path>
           </svg>
+          <span class="text-[9px] font-medium tracking-wide text-white/30 group-[.is-active]:text-white transition-colors">Journal</span>
         </RouterLink>
         
         <RouterLink 
           to="/library" 
-          class="p-3 rounded-full transition-all duration-300 group"
+          class="flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-full transition-all duration-300 group"
           active-class="bg-white/10 is-active"
         >
           <svg class="w-5 h-5 text-white/40 group-[.is-active]:text-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"></path>
           </svg>
+          <span class="text-[9px] font-medium tracking-wide text-white/30 group-[.is-active]:text-white transition-colors">Library</span>
         </RouterLink>
 
         <RouterLink 
-          to="/gatherings" 
-          class="p-3 rounded-full transition-all duration-300 group"
+          to="/events" 
+          class="flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-full transition-all duration-300 group"
           active-class="bg-white/10 is-active"
         >
           <svg class="w-5 h-5 text-white/40 group-[.is-active]:text-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z"></path>
           </svg>
+          <span class="text-[9px] font-medium tracking-wide text-white/30 group-[.is-active]:text-white transition-colors">Events</span>
         </RouterLink>
 
         <RouterLink 
-          v-if="currentUser?.role === 'admin'"
+          v-if="currentUser?.role === 'admin' || currentUser?.role === 'curator'"
           to="/admin" 
-          class="p-3 rounded-full transition-all duration-300 group"
+          class="flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-full transition-all duration-300 group"
           active-class="bg-white/10 is-active"
         >
           <svg class="w-5 h-5 text-white/40 group-[.is-active]:text-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z"></path>
           </svg>
+          <span class="text-[9px] font-medium tracking-wide text-white/30 group-[.is-active]:text-white transition-colors">Curator</span>
         </RouterLink>
 
         <RouterLink 
           to="/profile" 
-          class="p-3 rounded-full transition-all duration-300 group"
+          class="flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-full transition-all duration-300 group"
           active-class="bg-white/10 is-active"
         >
           <svg class="w-5 h-5 text-white/40 group-[.is-active]:text-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"></path>
           </svg>
+          <span class="text-[9px] font-medium tracking-wide text-white/30 group-[.is-active]:text-white transition-colors">Profile</span>
         </RouterLink>
       </div>
     </nav>
 
     <!-- Main Content Area with responsive padding -->
-    <main class="pt-24 md:pt-32 pb-32 md:pb-12 px-4 md:px-6">
+    <main class="pt-12 md:pt-28 pb-32 md:pb-12 px-4 md:px-6">
       <RouterView v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />

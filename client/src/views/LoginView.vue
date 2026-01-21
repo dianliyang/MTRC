@@ -36,16 +36,16 @@ const login = async () => {
 
 <template>
   <div class="max-w-md mx-auto mt-20 p-8 bg-white/40 backdrop-blur-xl border border-white/20 rounded-3xl shadow-lg">
-    <h1 class="font-serif text-3xl text-charcoal mb-8 text-center">Curator Access</h1>
+    <h1 class="font-serif text-3xl text-charcoal mb-8 text-left">Curator Access</h1>
     
-    <div class="space-y-6">
+    <form @submit.prevent="login" class="space-y-6">
       <div>
         <label class="block text-xs uppercase tracking-widest text-charcoal/40 font-bold mb-2">Email</label>
         <input 
           v-model="email" 
           type="email" 
+          autocomplete="username"
           class="w-full bg-white/50 border border-charcoal/10 rounded-lg py-3 px-4 focus:outline-none focus:border-accent transition-colors"
-          @keyup.enter="login"
         />
       </div>
 
@@ -54,13 +54,13 @@ const login = async () => {
         <input 
           v-model="password" 
           type="password" 
+          autocomplete="current-password"
           class="w-full bg-white/50 border border-charcoal/10 rounded-lg py-3 px-4 focus:outline-none focus:border-accent transition-colors"
-          @keyup.enter="login"
         />
       </div>
 
       <button 
-        @click="login" 
+        type="submit"
         class="w-full py-4 bg-charcoal text-white font-bold uppercase tracking-widest rounded-xl hover:bg-accent transition-colors disabled:opacity-50"
         :disabled="loading"
       >
@@ -68,6 +68,6 @@ const login = async () => {
       </button>
 
       <p v-if="error" class="text-center text-red-500 text-sm font-medium">{{ error }}</p>
-    </div>
+    </form>
   </div>
 </template>

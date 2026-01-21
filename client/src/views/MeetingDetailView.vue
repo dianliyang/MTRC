@@ -6,9 +6,9 @@
 
     <div v-else-if="meeting" class="space-y-16">
       <!-- Header -->
-      <section class="text-center md:text-left py-12 md:py-20 border-b border-charcoal/5">
+      <section class="text-left py-12 md:py-20 border-b border-charcoal/5">
         <div class="inline-block mb-6 px-3 py-1 border border-accent/30 text-accent text-[10px] tracking-[0.2em] uppercase font-bold rounded-full">
-          Gathering Detail
+          Event Detail
         </div>
         <h1 class="font-serif text-5xl md:text-6xl text-charcoal leading-tight mb-6">
           {{ meeting.topic }}
@@ -78,7 +78,7 @@
             </div>
 
             <div v-if="isFuture(meeting.date)" class="border-t border-charcoal/5 pt-8">
-              <h4 class="text-xs font-bold uppercase tracking-widest text-charcoal/40 mb-4">Join this Gathering</h4>
+              <h4 class="text-xs font-bold uppercase tracking-widest text-charcoal/40 mb-4">Join this Event</h4>
               
               <!-- Authenticated User: One-click join if not already participating -->
               <div v-if="currentUser && !isParticipating" class="space-y-4">
@@ -121,7 +121,7 @@
 
     <div v-else class="text-center py-20">
       <h2 class="font-serif text-2xl text-charcoal">Meeting not found</h2>
-      <RouterLink to="/gatherings" class="text-accent underline mt-4 inline-block">Return to Gatherings</RouterLink>
+      <RouterLink to="/events" class="text-accent underline mt-4 inline-block">Return to Events</RouterLink>
     </div>
   </div>
 </template>
@@ -174,7 +174,7 @@ const joinAsCurrentUser = async () => {
     alert('Attendance confirmed! You are now on the list.');
     await fetchMeeting();
   } catch (e) {
-    alert('Failed to join gathering.');
+    alert('Failed to join event.');
   } finally {
     joining.value = false;
   }

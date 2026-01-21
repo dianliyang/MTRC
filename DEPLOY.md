@@ -71,8 +71,8 @@ The backend is a serverless API running on Cloudflare Workers with a D1 SQLite d
 The frontend is a Vue 3 SPA hosted on Cloudflare Pages.
 
 ### Authentication & Roles
-*   **Public Access:** View-only access to books and gatherings.
-*   **Curator Access:** Requires login. Can suggest books and manage gatherings.
+*   **Public Access:** View-only access to books and events.
+*   **Curator Access:** Requires login. Can suggest books and manage events.
 *   **Admin Access:** Can invite new curators and administrators via the "Invite Curator" section in the Dashboard.
 
 ### Deployment Steps
