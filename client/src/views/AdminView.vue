@@ -244,7 +244,7 @@ const newMeeting = ref({
   bookIds: [] as number[],
 });
 
-const meetingTime = ref("19:00");
+const meetingTime = ref("16:00");
 
 // Sync time change back to main date
 watch(meetingTime, (newTime) => {

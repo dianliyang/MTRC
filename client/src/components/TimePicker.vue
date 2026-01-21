@@ -153,9 +153,9 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue']);
 
 const isOpen = ref(false);
-const selectedHour = ref(12);
+const selectedHour = ref(4);
 const selectedMinute = ref(0);
-const selectedPeriod = ref('AM');
+const selectedPeriod = ref('PM');
 
 const minutesOptions = Array.from({ length: 12 }, (_, i) => i * 5); // 0, 5, 10... 55
 
