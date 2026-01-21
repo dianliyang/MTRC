@@ -40,7 +40,7 @@
               class="bg-white/60 backdrop-blur-md p-5 rounded-2xl border border-white flex gap-5 group hover:shadow-xl transition-all duration-500"
             >
               <div class="w-20 h-28 bg-gray-100 shrink-0 overflow-hidden rounded shadow-sm">
-                <img v-if="book.volumeInfo.imageLinks?.thumbnail" :src="book.volumeInfo.imageLinks.thumbnail" referrerpolicy="no-referrer" class="w-full h-full object-cover" />
+                <img v-if="book.volumeInfo.imageLinks?.thumbnail" :src="proxyImage(book.volumeInfo.imageLinks.thumbnail)" class="w-full h-full object-cover" />
               </div>
               <div class="flex-1 min-w-0 flex flex-col justify-between">
                 <div>
@@ -112,7 +112,7 @@
 
         <div class="flex justify-center sm:mb-6 relative shrink-0">
           <div class="relative w-20 h-28 sm:w-32 sm:h-48 shadow-md rounded overflow-hidden group-hover:scale-105 transition-transform duration-500">
-            <img :src="book.coverUrl" referrerpolicy="no-referrer" class="w-full h-full object-cover" />
+            <img :src="proxyImage(book.coverUrl)" class="w-full h-full object-cover" />
             <div class="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent opacity-50"></div>
           </div>
           <!-- Reflection -->
@@ -144,7 +144,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
-import { formatAuthors } from '../utils';
+import { formatAuthors, proxyImage } from '../utils';
 import type { Book } from '../types';
 
 const books = ref<Book[]>([]);

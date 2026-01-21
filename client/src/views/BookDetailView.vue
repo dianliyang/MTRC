@@ -13,9 +13,8 @@
             <img 
               v-if="book.coverUrl" 
               class="w-full h-auto object-cover rounded-sm aspect-[2/3]" 
-              :src="book.coverUrl" 
+              :src="proxyImage(book.coverUrl)" 
               :alt="book.title"
-              referrerpolicy="no-referrer"
             >
             <div v-else class="w-full h-96 bg-charcoal/10 flex items-center justify-center text-charcoal/30 font-serif">No Cover</div>
             <div class="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-r from-black/20 to-transparent"></div>
@@ -93,7 +92,7 @@ import { ref, onMounted } from 'vue';
 import { useRoute, RouterLink } from 'vue-router';
 import axios from 'axios';
 import CommentSection from '../components/CommentSection.vue';
-import { formatAuthors } from '../utils';
+import { formatAuthors, proxyImage } from '../utils';
 import type { Book } from '../types';
 
 const route = useRoute();

@@ -13,9 +13,8 @@
             <img 
               v-if="currentBook.coverUrl" 
               class="w-full h-auto object-cover rounded-sm aspect-[2/3]" 
-              :src="currentBook.coverUrl" 
+              :src="proxyImage(currentBook.coverUrl)" 
               :alt="currentBook.title"
-              referrerpolicy="no-referrer"
             >
             <div v-else class="w-full h-96 bg-charcoal/10 flex items-center justify-center text-charcoal/30 font-serif">No Cover</div>
             
@@ -88,7 +87,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
-import { formatAuthors } from '../utils';
+import { formatAuthors, proxyImage } from '../utils';
 import type { Book } from '../types';
 
 const currentBook = ref<Book | undefined>(undefined);

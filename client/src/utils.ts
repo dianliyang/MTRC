@@ -29,3 +29,11 @@ export const formatTime = (date: string | number | Date): string => {
 export const isFuture = (date: string | number | Date): boolean => {
   return new Date(date) > new Date();
 };
+
+export const proxyImage = (url: string | undefined | null): string => {
+  if (!url) return '';
+  if (url.includes('google.com')) {
+    return `https://images-opensocial.googleusercontent.com/gadgets/proxy?container=focus&refresh=3600&url=${encodeURIComponent(url)}`;
+  }
+  return url;
+};
