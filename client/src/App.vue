@@ -75,6 +75,7 @@ const logout = () => {
             </RouterLink>
 
             <RouterLink 
+              v-if="currentUser?.role === 'admin'"
               to="/admin" 
               class="relative text-[11px] uppercase tracking-[0.2em] font-semibold transition-all duration-300 group text-charcoal/30 hover:text-charcoal"
               active-class="!text-charcoal is-active"
@@ -157,6 +158,7 @@ const logout = () => {
         </RouterLink>
 
         <RouterLink 
+          v-if="currentUser?.role === 'admin'"
           to="/admin" 
           class="flex-1 flex flex-col items-center py-2 rounded-full transition-all duration-300 group"
           active-class="bg-white/10 is-active"

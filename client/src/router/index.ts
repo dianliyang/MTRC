@@ -74,12 +74,17 @@ const router = createRouter({
 })
 
 router.beforeEach((to, _from, next) => {
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
   const isAuthenticated = !!localStorage.getItem('authToken');
   
   if (to.meta.requiresAuth && !isAuthenticated) {
     next({ name: 'login' });
+  } else if (to.path === '/admin' && user?.role !== 'admin') {
+    // If trying to access admin page without admin role, redirect to home
+    next({ name: 'home' });
   } else if (to.name === 'login' && isAuthenticated) {
-    next({ name: 'admin' });
+    next({ name: 'home' }); // Redirect to home instead of admin to be safe
   } else {
     next();
   }

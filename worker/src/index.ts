@@ -155,7 +155,7 @@ app.get('/api/books/:id', async (c) => {
 });
 
 // Add a book
-app.post('/api/books', async (c) => {
+app.post('/api/books', adminMiddleware, async (c) => {
   try {
     const db = getDB(c);
     const body = await c.req.json();
@@ -192,7 +192,7 @@ app.post('/api/books', async (c) => {
 });
 
 // Delete book
-app.delete('/api/books/:id', async (c) => {
+app.delete('/api/books/:id', adminMiddleware, async (c) => {
   try {
     const db = getDB(c);
     const id = parseInt(c.req.param('id'));
@@ -205,7 +205,7 @@ app.delete('/api/books/:id', async (c) => {
 });
 
 // Select Current Book
-app.post('/api/books/select', async (c) => {
+app.post('/api/books/select', adminMiddleware, async (c) => {
   try {
     const db = getDB(c);
     const body = await c.req.json();
@@ -471,7 +471,7 @@ app.get('/api/meetings/:id', async (c) => {
   }
 });
 
-app.post('/api/meetings', async (c) => {
+app.post('/api/meetings', adminMiddleware, async (c) => {
   try {
     const db = getDB(c);
     const body = await c.req.json();
@@ -502,7 +502,7 @@ app.post('/api/meetings', async (c) => {
   }
 });
 
-app.post('/api/meetings/:id/publish', async (c) => {
+app.post('/api/meetings/:id/publish', adminMiddleware, async (c) => {
   try {
     const db = getDB(c);
     const id = parseInt(c.req.param('id'));
