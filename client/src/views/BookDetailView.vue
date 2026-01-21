@@ -15,6 +15,7 @@
               class="w-full h-auto object-cover rounded-sm aspect-[2/3]" 
               :src="book.coverUrl" 
               :alt="book.title"
+              referrerpolicy="no-referrer"
             >
             <div v-else class="w-full h-96 bg-charcoal/10 flex items-center justify-center text-charcoal/30 font-serif">No Cover</div>
             <div class="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-r from-black/20 to-transparent"></div>

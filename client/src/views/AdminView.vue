@@ -105,7 +105,7 @@
             >
               <div class="relative overflow-hidden rounded-xl shadow-lg border-4 border-transparent transition-all duration-500"
                    :class="newMeeting.bookIds.includes(book.id) ? 'border-accent shadow-accent/20' : 'group-hover:shadow-xl'">
-                <img :src="book.coverUrl" class="w-20 h-28 object-cover" />
+                <img :src="book.coverUrl" referrerpolicy="no-referrer" class="w-20 h-28 object-cover" />
                 <div v-if="newMeeting.bookIds.includes(book.id)" class="absolute inset-0 bg-accent/10 flex items-center justify-center">
                    <div class="bg-accent text-white p-1 rounded-full scale-110 shadow-lg">
                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
@@ -142,7 +142,7 @@
             <div class="flex items-center gap-6">
               <div class="flex -space-x-4 overflow-hidden py-1">
                 <template v-if="meeting.Books && meeting.Books.length > 0">
-                  <img v-for="book in meeting.Books.slice(0, 3)" :key="book.id" :src="book.coverUrl" class="w-12 h-16 object-cover rounded-lg ring-4 ring-white shadow-sm" />
+                  <img v-for="book in meeting.Books.slice(0, 3)" :key="book.id" :src="book.coverUrl" referrerpolicy="no-referrer" class="w-12 h-16 object-cover rounded-lg ring-4 ring-white shadow-sm" />
                 </template>
                 <div v-else class="w-12 h-16 bg-charcoal/5 flex items-center justify-center text-[8px] text-charcoal/20 rounded-lg border border-dashed border-charcoal/10">EMPTY</div>
               </div>
