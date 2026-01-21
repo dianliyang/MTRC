@@ -65,7 +65,7 @@
             <input v-model="newMeeting.topic" type="text" placeholder="e.g. Winter Deep Dive" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
           </div>
           
-          <div class="flex gap-8">
+          <div class="flex flex-col sm:flex-row gap-8">
             <div class="flex-1 space-y-2">
               <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Date</label>
               <DatePicker v-model="newMeeting.date" :enable-time="false" />

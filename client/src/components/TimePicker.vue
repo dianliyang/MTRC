@@ -11,19 +11,26 @@
       </span>
     </button>
 
+    <!-- Popover Backdrop for Mobile -->
+    <div 
+      v-if="isOpen" 
+      class="fixed inset-0 z-[90] bg-charcoal/5 backdrop-blur-sm md:hidden" 
+      @click="close"
+    ></div>
+
     <!-- Popover -->
     <transition
-      enter-active-class="transition duration-200 ease-out"
-      enter-from-class="translate-y-1 opacity-0"
-      enter-to-class="translate-y-0 opacity-100"
-      leave-active-class="transition duration-150 ease-in"
-      leave-from-class="translate-y-0 opacity-100"
-      leave-to-class="translate-y-1 opacity-0"
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="translate-y-full md:translate-y-2 md:opacity-0"
+      enter-to-class="translate-y-0 md:translate-y-0 md:opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="translate-y-0 md:translate-y-0 md:opacity-100"
+      leave-to-class="translate-y-full md:translate-y-2 md:opacity-0"
     >
       <div
         v-if="isOpen"
         @click.stop
-        class="absolute z-[100] top-full left-0 right-0 mt-2 p-2 bg-white border border-charcoal/10 shadow-2xl flex w-full min-h-[280px] rounded-2xl"
+        class="fixed bottom-0 left-0 right-0 z-[100] p-6 bg-white rounded-t-[2.5rem] shadow-[0_-20px_50px_rgba(0,0,0,0.1)] flex md:absolute md:bottom-auto md:top-full md:left-auto md:right-0 md:mt-2 md:p-2 md:w-[280px] md:min-h-[280px] md:rounded-2xl md:shadow-2xl border md:border-charcoal/10"
       >
         <!-- Hours -->
         <div class="flex-1 flex flex-col items-center py-4 px-2">
