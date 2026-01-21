@@ -1,32 +1,56 @@
 <template>
   <div class="relative w-full">
-    <input 
+    <input
       ref="fpInput"
-      type="text" 
-      :placeholder="placeholder || 'Select date & time'" 
+      type="text"
+      :placeholder="placeholder || 'Select date & time'"
       class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans cursor-pointer"
     />
+    <!-- Mobile Backdrop -->
+    <Teleport to="body">
+      <div
+        v-if="isOpen && isMobile"
+        class="fixed inset-0 z-[9998] bg-charcoal/20 backdrop-blur-sm md:hidden"
+        @click="closeCalendar"
+      ></div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from "vue";
 import flatpickr from "flatpickr";
 import "flatpickr/dist/flatpickr.css";
 
-const props = withDefaults(defineProps<{
-  modelValue: string;
-  placeholder?: string;
-  enableTime?: boolean;
-}>(), {
-  enableTime: true
-});
+const props = withDefaults(
+  defineProps<{
+    modelValue: string;
+    placeholder?: string;
+    enableTime?: boolean;
+  }>(),
+  {
+    enableTime: true,
+  },
+);
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(["update:modelValue"]);
 const fpInput = ref<HTMLInputElement | null>(null);
+const isOpen = ref(false);
+const isMobile = ref(false);
 let fpInstance: any = null;
 
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768;
+};
+
+const closeCalendar = () => {
+  if (fpInstance) fpInstance.close();
+};
+
 onMounted(() => {
+  checkMobile();
+  window.addEventListener("resize", checkMobile);
+
   if (fpInput.value) {
     fpInstance = flatpickr(fpInput.value, {
       enableTime: props.enableTime,
@@ -34,27 +58,38 @@ onMounted(() => {
       dateFormat: "Z",
       altInput: true,
       altFormat: props.enableTime ? "F j, Y at h:i K" : "F j, Y",
-      altInputClass: "w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans cursor-pointer",
+      altInputClass:
+        "w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans cursor-pointer",
       defaultDate: props.modelValue,
       minDate: "today",
-      monthSelectorType: "static", 
-      static: true,
+      monthSelectorType: "static",
+      static: false,
       animate: true,
       disableMobile: true,
+      onOpen: () => {
+        isOpen.value = true;
+      },
+      onClose: () => {
+        isOpen.value = false;
+      },
       onChange: (selectedDates) => {
         if (selectedDates.length > 0) {
-          emit('update:modelValue', selectedDates[0].toISOString());
+          emit("update:modelValue", selectedDates[0].toISOString());
         }
-      }
+      },
     });
   }
 });
 
-watch(() => props.modelValue, (newVal) => {
-  if (fpInstance && newVal) fpInstance.setDate(newVal, false);
-});
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (fpInstance && newVal) fpInstance.setDate(newVal, false);
+  },
+);
 
 onUnmounted(() => {
+  window.removeEventListener("resize", checkMobile);
   if (fpInstance) fpInstance.destroy();
 });
 </script>
@@ -67,11 +102,47 @@ onUnmounted(() => {
   border-radius: 1.5rem !important;
   padding: 1.5rem !important;
   margin-top: 8px !important;
-  font-family: 'Inter', sans-serif !important;
-  width: 100% !important; 
-  min-width: 300px !important;
-  max-width: 400px !important;
-  z-index: 50 !important;
+  font-family: "Inter", sans-serif !important;
+  width: 340px !important;
+  z-index: 9999 !important;
+}
+
+/* Mobile Bottom Sheet Style */
+@media (max-width: 767px) {
+  .flatpickr-calendar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    border-radius: 2.5rem 2.5rem 0 0 !important;
+    margin: 0 !important;
+    padding: 2rem 1rem 4rem 1rem !important;
+    transform: translateY(0) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .flatpickr-calendar.open {
+    animation: slide-up 0.3s ease-out !important;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 .flatpickr-wrapper {
@@ -79,64 +150,90 @@ onUnmounted(() => {
   display: block !important;
 }
 
-span.flatpickr-weekday {
-  color: rgba(44, 44, 44, 0.3) !important;
-  font-size: 10px !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.1em !important;
-  font-weight: 800 !important;
-}
-
-.flatpickr-days {
+.flatpickr-innerContainer {
   width: 100% !important;
   display: flex !important;
   justify-content: center !important;
 }
 
-.dayContainer {
-  min-width: 100% !important;
-  max-width: 100% !important;
-  width: 100% !important;
-}
-
 .flatpickr-months {
-  padding: 0 10px !important;
+  padding: 0 !important;
   height: 48px !important;
   display: flex !important;
   align-items: center !important;
+  position: relative !important;
+  width: 100% !important;
+  margin-bottom: 8px !important;
 }
 
 .flatpickr-months .flatpickr-month {
   color: #2c2c2c !important;
   fill: #2c2c2c !important;
-  pointer-events: none !important; 
   height: 48px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  width: 100% !important;
+  margin: 0 !important;
+  pointer-events: none !important;
 }
 
 .flatpickr-current-month {
   padding: 0 !important;
-  height: auto !important;
+  height: 100% !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  top: 0 !important;
+  position: static !important;
+  width: auto !important;
+  font-family: "Inter", sans-serif !important;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months,
+.flatpickr-current-month span.cur-year {
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  font-family: "Inter", sans-serif !important;
+  color: #2c2c2c !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 2px !important;
+  margin: 0 !important;
+  width: auto !important;
+  display: inline-block !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
   pointer-events: none !important;
 }
 
-.flatpickr-current-month .flatpickr-monthDropdown-months {
-  font-weight: 700 !important;
-  font-size: 14px !important;
-  pointer-events: none !important;
-  padding: 0 4px !important;
+.flatpickr-current-month span.cur-year {
+  margin-left: 4px !important;
 }
 
 .numInputWrapper {
-  pointer-events: none !important;
   display: flex !important;
   align-items: center !important;
+  width: auto !important;
+  pointer-events: none !important;
+}
+
+.numInputWrapper input {
+  display: none !important;
+}
+
+.numInputWrapper span {
+  display: none !important;
+}
+
+.flatpickr-days {
+  width: auto !important;
+  display: flex !important;
+}
+
+.dayContainer {
+  width: 307.875px !important;
+  min-width: 307.875px !important;
+  max-width: 307.875px !important;
 }
 
 .flatpickr-day {
@@ -144,6 +241,15 @@ span.flatpickr-weekday {
   color: #2c2c2c !important;
   font-size: 13px !important;
   font-weight: 500 !important;
+}
+
+.flatpickr-day.flatpickr-disabled, 
+.flatpickr-day.flatpickr-disabled:hover,
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay {
+  color: rgba(44, 44, 44, 0.15) !important;
+  background: transparent !important;
+  border-color: transparent !important;
 }
 
 .flatpickr-day.today {
@@ -156,42 +262,7 @@ span.flatpickr-weekday {
   color: #f8f5f2 !important;
 }
 
-.flatpickr-time {
-  border-top: 1px solid rgba(0,0,0,0.05) !important;
-  height: 60px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 4px !important;
-}
-
-.flatpickr-time input {
-  font-weight: 700 !important;
-  font-size: 16px !important;
-  background: rgba(44, 44, 44, 0.05) !important;
-  border-radius: 8px !important;
-  height: 40px !important;
-  width: 50px !important;
-  text-align: center !important;
-  cursor: text !important;
-  border: 1px solid transparent !important;
-  transition: all 0.2s ease !important;
-}
-
-.flatpickr-time input:focus {
-  background: #ffffff !important;
-  border-color: rgba(217, 119, 6, 0.3) !important;
-  box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.05) !important;
-}
-
-/* Hide arrow buttons for a cleaner input look */
-.flatpickr-time .numInputWrapper span {
-  display: none !important;
-}
-
-.flatpickr-calendar:before, .flatpickr-calendar:after { display: none !important; }
-
-.flatpickr-months .flatpickr-prev-month, 
+.flatpickr-months .flatpickr-prev-month,
 .flatpickr-months .flatpickr-next-month {
   display: flex !important;
   align-items: center !important;
@@ -201,26 +272,26 @@ span.flatpickr-weekday {
   padding: 0 !important;
   color: rgba(44, 44, 44, 0.4) !important;
   fill: rgba(44, 44, 44, 0.4) !important;
-  pointer-events: auto !important;
   z-index: 10 !important;
-  border-radius: 50% !important;
-  transition: all 0.3s ease !important;
+  transition: color 0.3s ease !important;
   cursor: pointer !important;
-  top: 8px !important; /* Center within the 48px header (48-32)/2 = 8 */
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
 }
 
-.flatpickr-months .flatpickr-prev-month:hover, 
+.flatpickr-months .flatpickr-prev-month:hover,
 .flatpickr-months .flatpickr-next-month:hover {
-  background: rgba(44, 44, 44, 0.05) !important;
+  background: transparent !important;
   color: #d97706 !important;
   fill: #d97706 !important;
 }
 
 .flatpickr-months .flatpickr-prev-month {
-  left: 15px !important;
+  left: -5px !important;
 }
 
 .flatpickr-months .flatpickr-next-month {
-  right: 15px !important;
+  right: -5px !important;
 }
 </style>

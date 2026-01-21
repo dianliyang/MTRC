@@ -7,6 +7,7 @@ import LibraryView from '../views/LibraryView.vue'
 import LoginView from '../views/LoginView.vue'
 import BookDetailView from '../views/BookDetailView.vue'
 import ProfileView from '../views/ProfileView.vue'
+import DataPrivacyView from '../views/DataPrivacyView.vue'
 import ConfirmJoinView from '../views/ConfirmJoinView.vue'
 import AcceptInvitationView from '../views/AcceptInvitationView.vue'
 
@@ -38,6 +39,12 @@ const router = createRouter({
       path: '/profile',
       name: 'profile',
       component: ProfileView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/privacy',
+      name: 'privacy',
+      component: DataPrivacyView,
       meta: { requiresAuth: true }
     },
     {

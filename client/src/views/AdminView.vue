@@ -1,134 +1,47 @@
 <template>
   <div class="max-w-5xl mx-auto">
-    <div class="flex justify-between items-baseline mb-12">
+    <div class="flex flex-col md:flex-row justify-between items-baseline mb-12 gap-6">
       <div>
         <h1 class="font-serif text-4xl text-charcoal tracking-tight">Admin Console</h1>
         <span class="text-sm text-charcoal/40 font-medium"
           >System and Event Controls</span
         >
       </div>
-      <button @click="logout" class="text-[10px] uppercase tracking-widest font-black text-charcoal/20 hover:text-red-400 transition-colors">
-        End Session
-      </button>
-    </div>
-
-    <!-- Invite User Section (Admin Only) -->
-    <div v-if="currentUser?.role === 'admin'" class="mb-20">
-      <div class="flex justify-between items-baseline mb-10">
-        <h2 class="font-serif text-3xl text-charcoal">Invite Curator</h2>
-        <span class="text-[10px] text-accent uppercase tracking-[0.2em] font-bold">Identity Management</span>
-      </div>
-
-      <div class="bg-white/40 backdrop-blur-md p-8 md:p-12 rounded-[2rem] border border-white shadow-sm">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10 mb-12">
-          <div class="space-y-2">
-            <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Full Name</label>
-            <input v-model="inviteForm.name" type="text" placeholder="e.g. Jane Doe" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
-          </div>
-          <div class="space-y-2">
-            <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Email Address</label>
-            <input v-model="inviteForm.email" type="email" placeholder="jane@example.com" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
-          </div>
-          <div class="space-y-2">
-            <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Account Role</label>
-            <select v-model="inviteForm.role" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal focus:outline-none focus:border-accent transition-colors font-sans cursor-pointer appearance-none">
-              <option value="user">Curator</option>
-              <option value="admin">Administrator</option>
-            </select>
-          </div>
-        </div>
+      
+      <!-- Unified Tab Switcher -->
+      <div class="flex bg-white/40 backdrop-blur-xl border border-white/20 p-1 rounded-2xl shadow-sm w-full md:w-auto overflow-x-auto scrollbar-hide">
         <button 
-          @click="inviteUser" 
-          :disabled="inviting || !inviteForm.email || !inviteForm.name"
-          class="px-10 py-4 bg-charcoal text-sand text-[10px] uppercase tracking-[0.3em] font-bold rounded-full hover:bg-accent hover:shadow-lg transition-all duration-500 disabled:opacity-20"
+          @click="activeTab = 'registry'"
+          class="flex-1 md:flex-none px-6 py-2.5 rounded-xl text-[10px] uppercase tracking-widest font-black transition-all duration-300 whitespace-nowrap"
+          :class="activeTab === 'registry' ? 'bg-charcoal text-white shadow-md' : 'text-charcoal/40 hover:text-charcoal'"
         >
-          {{ inviting ? 'Sending...' : 'Send Invitation' }}
+          Registry
+        </button>
+        <button 
+          @click="activeTab = 'schedule'"
+          class="flex-1 md:flex-none px-6 py-2.5 rounded-xl text-[10px] uppercase tracking-widest font-black transition-all duration-300 whitespace-nowrap"
+          :class="activeTab === 'schedule' ? 'bg-charcoal text-white shadow-md' : 'text-charcoal/40 hover:text-charcoal'"
+        >
+          Schedule
+        </button>
+        <button 
+          v-if="currentUser?.role === 'admin'"
+          @click="activeTab = 'curators'"
+          class="flex-1 md:flex-none px-6 py-2.5 rounded-xl text-[10px] uppercase tracking-widest font-black transition-all duration-300 whitespace-nowrap"
+          :class="activeTab === 'curators' ? 'bg-charcoal text-white shadow-md' : 'text-charcoal/40 hover:text-charcoal'"
+        >
+          Curators
         </button>
       </div>
     </div>
 
-    <!-- Schedule Meeting Section -->
-    <div class="mb-20 border-t border-charcoal/10 pt-16">
-      <div class="flex justify-between items-baseline mb-10">
-        <h2 class="font-serif text-3xl text-charcoal">Create Event</h2>
-        <span class="text-[10px] text-charcoal/40 uppercase tracking-[0.2em] font-bold">Programming</span>
-      </div>
-
-      <div class="bg-white/40 backdrop-blur-md p-8 md:p-12 rounded-[2rem] border border-white shadow-sm mb-12">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10 mb-12">
-          <div class="space-y-2">
-            <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Topic</label>
-            <input v-model="newMeeting.topic" type="text" placeholder="e.g. Winter Deep Dive" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
-          </div>
-          
-          <div class="flex flex-col sm:flex-row gap-8">
-            <div class="flex-1 space-y-2">
-              <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Date</label>
-              <DatePicker v-model="newMeeting.date" :enable-time="false" />
-            </div>
-
-            <div class="flex-1 space-y-2">
-              <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Time</label>
-              <TimePicker v-model="meetingTime" />
-            </div>
-          </div>
-
-          <div class="space-y-2">
-            <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Venue</label>
-            <input v-model="newMeeting.location" type="text" placeholder="e.g. Virtual Lounge" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
-          </div>
-
-          <div class="space-y-2">
-            <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Host</label>
-            <input v-model="newMeeting.host" type="text" placeholder="Curator name" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
-          </div>
-
-          <div class="md:col-span-2 space-y-2">
-            <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Agenda</label>
-            <textarea v-model="newMeeting.description" @input="adjustTextareaHeight($event.target)" placeholder="Details..." class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans resize-none overflow-hidden min-h-[3rem]"></textarea>
-          </div>
+    <transition name="fade" mode="out-in">
+      <!-- Registry View -->
+      <div v-if="activeTab === 'registry'" key="registry" class="space-y-6">
+        <div class="flex justify-between items-baseline mb-10">
+          <h2 class="font-serif text-3xl text-charcoal">Event Registry</h2>
+          <span class="text-[10px] text-charcoal/40 uppercase tracking-[0.2em] font-bold">Archive</span>
         </div>
-
-        <!-- Subject Matter Selection -->
-        <div class="mb-12">
-          <label class="block text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 mb-8 ml-1">Linked Literature</label>
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-8">
-            <div 
-              v-for="book in candidates" 
-              :key="book.id"
-              @click="toggleBookSelection(book.id)"
-              class="cursor-pointer group relative flex flex-col items-center text-center gap-4 transition-all duration-500 active:scale-95"
-            >
-              <div class="relative overflow-hidden rounded-xl shadow-lg border-4 border-transparent transition-all duration-500"
-                   :class="newMeeting.bookIds.includes(book.id) ? 'border-accent shadow-accent/20' : 'group-hover:shadow-xl'">
-                <img :src="book.coverUrl" class="w-20 h-28 object-cover" />
-                <div v-if="newMeeting.bookIds.includes(book.id)" class="absolute inset-0 bg-accent/10 flex items-center justify-center">
-                   <div class="bg-accent text-white p-1 rounded-full scale-110 shadow-lg">
-                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                   </div>
-                </div>
-              </div>
-              <div class="text-[10px] font-bold leading-tight text-charcoal line-clamp-2 uppercase tracking-tight opacity-60 group-hover:opacity-100 transition-opacity">{{ book.title }}</div>
-            </div>
-          </div>
-        </div>
-
-        <button 
-          @click="createMeeting" 
-          class="w-full py-5 bg-charcoal text-sand text-[11px] uppercase tracking-[0.3em] font-bold rounded-full shadow-lg hover:bg-accent transition-all duration-500 disabled:opacity-20 flex items-center justify-center gap-4"
-          :disabled="creatingMeeting || !newMeeting.topic || !newMeeting.date"
-        >
-          {{ creatingMeeting ? 'Processing...' : 'Confirm & Create' }}
-        </button>
-      </div>
-
-      <!-- Events List -->
-      <div class="space-y-6">
-        <div class="flex items-center gap-4 mb-8">
-          <h3 class="font-serif text-2xl text-charcoal">Registry</h3>
-          <div class="h-px flex-1 bg-charcoal/5"></div>
-        </div>
-
         <div class="space-y-4">
           <div
             v-for="meeting in meetings"
@@ -168,7 +81,136 @@
           </div>
         </div>
       </div>
-    </div>
+
+      <!-- Schedule View -->
+      <div v-else-if="activeTab === 'schedule'" key="schedule">
+        <div class="flex justify-between items-baseline mb-10">
+          <h2 class="font-serif text-3xl text-charcoal">Schedule Event</h2>
+          <span class="text-[10px] text-charcoal/40 uppercase tracking-[0.2em] font-bold">Programming</span>
+        </div>
+
+        <div class="bg-white/40 backdrop-blur-md p-8 md:p-12 rounded-[2rem] border border-white shadow-sm mb-12">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10 mb-12">
+            <div class="space-y-2">
+              <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Topic</label>
+              <input v-model="newMeeting.topic" type="text" placeholder="e.g. Winter Deep Dive" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-8">
+              <div class="flex-1 space-y-2">
+                <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Date</label>
+                <DatePicker v-model="newMeeting.date" :enable-time="false" />
+              </div>
+
+              <div class="flex-1 space-y-2">
+                <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Time</label>
+                <TimePicker v-model="meetingTime" />
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Venue</label>
+              <input v-model="newMeeting.location" type="text" placeholder="e.g. Virtual Lounge" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Host</label>
+              <input v-model="newMeeting.host" type="text" placeholder="Curator name" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
+            </div>
+
+            <div class="md:col-span-2 space-y-2">
+              <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Agenda</label>
+              <textarea v-model="newMeeting.description" @input="adjustTextareaHeight($event.target)" placeholder="Details..." class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans resize-none overflow-hidden min-h-[3rem]"></textarea>
+            </div>
+          </div>
+
+          <!-- Subject Matter Selection -->
+          <div class="mb-12">
+            <label class="block text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 mb-6 ml-1">Linked Literature</label>
+            <div class="max-h-64 overflow-y-auto pr-2 space-y-1 custom-scrollbar border-t border-b border-charcoal/5 py-4">
+              <div 
+                v-for="book in candidates" 
+                :key="book.id"
+                @click="toggleBookSelection(book.id)"
+                class="cursor-pointer group flex items-center justify-between p-3 rounded-2xl transition-all duration-300 border border-transparent hover:bg-white/60"
+                :class="newMeeting.bookIds.includes(book.id) ? 'bg-white border-accent/10 shadow-sm' : ''"
+              >
+                <div class="flex items-center gap-4">
+                  <div class="relative">
+                    <img :src="book.coverUrl" class="w-8 h-11 object-cover rounded shadow-sm" />
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-[11px] font-bold text-charcoal tracking-tight">{{ book.title }}</span>
+                    <span class="text-[9px] text-charcoal/40 tracking-widest font-medium">
+                      {{ (Array.isArray(book.authors) ? book.authors : JSON.parse(book.authors as string || '[]')).join(' · ') }}
+                    </span>
+                  </div>
+                </div>
+                <div class="w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-300"
+                     :class="newMeeting.bookIds.includes(book.id) ? 'bg-accent border-accent text-white' : 'border-charcoal/20'">
+                  <svg v-if="newMeeting.bookIds.includes(book.id)" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-4">
+            <button 
+              @click="createMeeting(false)" 
+              class="flex-1 py-5 bg-white border border-charcoal/10 text-charcoal text-[11px] uppercase tracking-[0.3em] font-bold rounded-full shadow-sm hover:bg-charcoal hover:text-sand transition-all duration-500 disabled:opacity-20 flex items-center justify-center gap-4"
+              :disabled="creatingMeeting || !newMeeting.topic || !newMeeting.date"
+            >
+              {{ creatingMeeting ? 'Saving...' : 'Save Draft' }}
+            </button>
+            <button 
+              @click="createMeeting(true)" 
+              class="flex-1 py-5 bg-charcoal text-sand text-[11px] uppercase tracking-[0.3em] font-bold rounded-full shadow-lg hover:bg-accent transition-all duration-500 disabled:opacity-20 flex items-center justify-center gap-4"
+              :disabled="creatingMeeting || !newMeeting.topic || !newMeeting.date"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+              {{ creatingMeeting ? 'Publishing...' : 'Save & Publish' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Curators Section (Admin Only) -->
+      <div v-else-if="activeTab === 'curators' && currentUser?.role === 'admin'" key="curators">
+        <div class="flex justify-between items-baseline mb-10">
+          <h2 class="font-serif text-3xl text-charcoal">Invite Curator</h2>
+          <span class="text-[10px] text-accent uppercase tracking-[0.2em] font-bold">Identity Management</span>
+        </div>
+
+        <div class="bg-white/40 backdrop-blur-md p-8 md:p-12 rounded-[2rem] border border-white shadow-sm">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10 mb-12">
+            <div class="space-y-2">
+              <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Full Name</label>
+              <input v-model="inviteForm.name" type="text" placeholder="e.g. Jane Doe" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Email Address</label>
+              <input v-model="inviteForm.email" type="email" placeholder="jane@example.com" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Account Role</label>
+              <select v-model="inviteForm.role" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal focus:outline-none focus:border-accent transition-colors font-sans cursor-pointer appearance-none">
+                <option value="user">Curator</option>
+                <option value="admin">Administrator</option>
+              </select>
+            </div>
+          </div>
+          <button 
+            @click="inviteUser" 
+            :disabled="inviting || !inviteForm.email || !inviteForm.name"
+            class="px-10 py-4 bg-charcoal text-sand text-[10px] uppercase tracking-[0.3em] font-bold rounded-full hover:bg-accent hover:shadow-lg transition-all duration-500 disabled:opacity-20"
+          >
+            {{ inviting ? 'Sending...' : 'Send Invitation' }}
+          </button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -185,6 +227,7 @@ const creatingMeeting = ref(false);
 const currentUser = ref<any>(null);
 const inviting = ref(false);
 const inviteForm = ref({ name: '', email: '', role: 'user' });
+const activeTab = ref('registry');
 
 const newMeeting = ref({
   topic: "",
@@ -267,14 +310,21 @@ const fetchMeetings = async () => {
   }
 };
 
-const createMeeting = async () => {
+const createMeeting = async (publish = false) => {
   creatingMeeting.value = true;
   try {
-    await axios.post('/api/meetings', newMeeting.value);
+    const res = await axios.post('/api/meetings', newMeeting.value);
+    const meetingId = res.data.id;
+    
+    if (publish && meetingId) {
+      await axios.post(`/api/meetings/${meetingId}/publish`);
+    }
+    
     newMeeting.value = { topic: "", date: "", location: "", description: "", host: "", bookIds: [] };
+    activeTab.value = 'registry';
     await fetchMeetings();
   } catch (e) {
-    alert("Failed");
+    alert("Failed to save event");
   } finally {
     creatingMeeting.value = false;
   }

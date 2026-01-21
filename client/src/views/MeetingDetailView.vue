@@ -79,7 +79,30 @@
 
             <div v-if="isFuture(meeting.date)" class="border-t border-charcoal/5 pt-8">
               <h4 class="text-xs font-bold uppercase tracking-widest text-charcoal/40 mb-4">Join this Gathering</h4>
-              <div class="space-y-3">
+              
+              <!-- Authenticated User: One-click join if not already participating -->
+              <div v-if="currentUser && !isParticipating" class="space-y-4">
+                <p class="text-xs text-charcoal/60 leading-relaxed">Confirm your attendance with one click.</p>
+                <button 
+                  @click="joinAsCurrentUser" 
+                  class="w-full py-3 bg-charcoal text-white text-[10px] uppercase tracking-[0.2em] font-bold rounded-full hover:bg-accent transition-all duration-300 flex items-center justify-center gap-2"
+                  :disabled="joining"
+                >
+                  <svg v-if="!joining" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                  {{ joining ? 'Joining...' : 'Confirm My Spot' }}
+                </button>
+              </div>
+
+              <!-- Participant message if already joined -->
+              <div v-else-if="currentUser && isParticipating" class="bg-accent/5 p-4 rounded-xl border border-accent/10">
+                <div class="flex items-center gap-2 text-accent">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                  <span class="text-[10px] uppercase tracking-widest font-black">You're attending</span>
+                </div>
+              </div>
+
+              <!-- Guest Form -->
+              <div v-else class="space-y-3">
                 <input v-model="joinForm.name" type="text" placeholder="Your Name" class="w-full bg-transparent border-b border-charcoal/10 py-2 focus:outline-none focus:border-accent transition-colors text-sm" />
                 <input v-model="joinForm.email" type="email" placeholder="Your Email" class="w-full bg-transparent border-b border-charcoal/10 py-2 focus:outline-none focus:border-accent transition-colors text-sm" />
                 <button 
@@ -104,8 +127,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, onMounted, computed } from 'vue';
+import { useRoute, RouterLink } from 'vue-router';
 import axios from 'axios';
 import { formatDate, formatTime, isFuture, formatAuthors } from '../utils';
 import type { Meeting } from '../types';
@@ -115,8 +138,21 @@ const meeting = ref<Meeting | null>(null);
 const loading = ref(true);
 const joining = ref(false);
 const joinForm = ref({ name: '', email: '' });
+const currentUser = ref<any>(null);
+
+const isParticipating = computed(() => {
+  if (!currentUser.value || !meeting.value?.Participants) return false;
+  return meeting.value.Participants.some(p => p.email.toLowerCase() === currentUser.value.email.toLowerCase());
+});
 
 onMounted(async () => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) currentUser.value = JSON.parse(userStr);
+
+  await fetchMeeting();
+});
+
+const fetchMeeting = async () => {
   try {
     const res = await axios.get<Meeting>(`/api/meetings/${route.params.id}`);
     meeting.value = res.data;
@@ -125,7 +161,24 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+};
+
+const joinAsCurrentUser = async () => {
+  if (!currentUser.value) return;
+  joining.value = true;
+  try {
+    await axios.post(`/api/meetings/${route.params.id}/join`, {
+      name: currentUser.value.name,
+      email: currentUser.value.email
+    });
+    alert('Attendance confirmed! You are now on the list.');
+    await fetchMeeting();
+  } catch (e) {
+    alert('Failed to join gathering.');
+  } finally {
+    joining.value = false;
+  }
+};
 
 const joinMeeting = async () => {
   if (!joinForm.value.name || !joinForm.value.email) return;

@@ -130,48 +130,58 @@ const logout = () => {
     </nav>
 
     <!-- Mobile Bottom Navigation -->
-    <nav class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 md:hidden w-[90%] max-w-sm">
-      <div class="bg-charcoal/90 backdrop-blur-2xl border border-white/10 rounded-full px-2 py-2 flex justify-between items-center shadow-2xl">
+    <nav class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 md:hidden">
+      <div class="bg-charcoal/90 backdrop-blur-2xl border border-white/10 rounded-full px-2 py-2 flex items-center gap-1 shadow-2xl">
         <RouterLink 
           to="/" 
-          class="flex-1 flex flex-col items-center py-2 rounded-full transition-all duration-300 group"
+          class="p-3 rounded-full transition-all duration-300 group"
           active-class=""
           exact-active-class="bg-white/10 is-active"
         >
-          <span class="text-[10px] uppercase tracking-[0.2em] font-bold text-white/40 group-[.is-active]:text-accent">Journal</span>
+          <svg class="w-5 h-5 text-white/40 group-[.is-active]:text-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z"></path>
+          </svg>
         </RouterLink>
         
         <RouterLink 
           to="/library" 
-          class="flex-1 flex flex-col items-center py-2 rounded-full transition-all duration-300 group"
+          class="p-3 rounded-full transition-all duration-300 group"
           active-class="bg-white/10 is-active"
         >
-          <span class="text-[10px] uppercase tracking-[0.2em] font-bold text-white/40 group-[.is-active]:text-accent">Library</span>
+          <svg class="w-5 h-5 text-white/40 group-[.is-active]:text-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+          </svg>
         </RouterLink>
 
         <RouterLink 
           to="/gatherings" 
-          class="flex-1 flex flex-col items-center py-2 rounded-full transition-all duration-300 group"
+          class="p-3 rounded-full transition-all duration-300 group"
           active-class="bg-white/10 is-active"
         >
-          <span class="text-[10px] uppercase tracking-[0.2em] font-bold text-white/40 group-[.is-active]:text-accent">Events</span>
+          <svg class="w-5 h-5 text-white/40 group-[.is-active]:text-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
         </RouterLink>
 
         <RouterLink 
           v-if="currentUser?.role === 'admin'"
           to="/admin" 
-          class="flex-1 flex flex-col items-center py-2 rounded-full transition-all duration-300 group"
+          class="p-3 rounded-full transition-all duration-300 group"
           active-class="bg-white/10 is-active"
         >
-          <span class="text-[10px] uppercase tracking-[0.2em] font-bold text-white/40 group-[.is-active]:text-accent">Curator</span>
+          <svg class="w-5 h-5 text-white/40 group-[.is-active]:text-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"></path>
+          </svg>
         </RouterLink>
 
         <RouterLink 
           to="/profile" 
-          class="flex-1 flex flex-col items-center py-2 rounded-full transition-all duration-300 group"
+          class="p-3 rounded-full transition-all duration-300 group"
           active-class="bg-white/10 is-active"
         >
-          <span class="text-[10px] uppercase tracking-[0.2em] font-bold text-white/40 group-[.is-active]:text-accent">Me</span>
+          <svg class="w-5 h-5 text-white/40 group-[.is-active]:text-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
         </RouterLink>
       </div>
     </nav>

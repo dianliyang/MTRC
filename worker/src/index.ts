@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { jwt, sign } from 'hono/jwt';
 import { drizzle } from 'drizzle-orm/d1';
-import { eq, desc, or, and, isNull, inArray } from 'drizzle-orm';
+import { eq, desc, or, and, isNull, isNotNull, inArray } from 'drizzle-orm';
 import * as schema from './schema';
 
 type Bindings = {
@@ -877,10 +877,51 @@ app.post('/api/login', async (c) => {
     exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 
   }, secret, 'HS256'); // Added algorithm explicitly for clarity
 
-  return c.json({ id: user.id, name: user.name, email: user.email, role: user.role, token });
+  return c.json({ id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt, token });
 });
 
 // Profile Management
+app.post('/api/profile/password', async (c) => {
+  try {
+    const db = getDB(c);
+    const payload = c.get('jwtPayload');
+    if (!payload?.id) return c.json({ error: 'Unauthorized' }, 401);
+
+    const { currentPassword, newPassword } = await c.req.json();
+    if (!currentPassword) return c.json({ error: 'Current password is required' }, 400);
+    if (!newPassword || newPassword.length < 8) return c.json({ error: 'New password must be at least 8 characters' }, 400);
+
+    const encoder = new TextEncoder();
+    
+    // Verify current password
+    const currentData = encoder.encode(currentPassword);
+    const currentHash = await crypto.subtle.digest('SHA-256', currentData);
+    const currentHashHex = Array.from(new Uint8Array(currentHash)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+    const user = await db.query.users.findFirst({
+      where: and(eq(schema.users.id, parseInt(payload.id)), eq(schema.users.password, currentHashHex))
+    });
+
+    if (!user) return c.json({ error: 'Incorrect current password' }, 401);
+
+    // Hash the new password
+    const newData = encoder.encode(newPassword);
+    const newHash = await crypto.subtle.digest('SHA-256', newData);
+    const newHashHex = Array.from(new Uint8Array(newHash)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+    await db.update(schema.users)
+      .set({ 
+        password: newHashHex, 
+        updatedAt: new Date() 
+      })
+      .where(eq(schema.users.id, user.id));
+
+    return c.json({ success: true, message: 'Password updated' });
+  } catch (e) {
+    return c.json({ error: 'Update failed' }, 500);
+  }
+});
+
 app.delete('/api/profile', async (c) => {
   try {
     const db = getDB(c);
