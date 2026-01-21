@@ -30,10 +30,6 @@
             <input v-model="inviteForm.email" type="email" placeholder="jane@example.com" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
           </div>
           <div class="space-y-2">
-            <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Temporary Password</label>
-            <input v-model="inviteForm.password" type="text" placeholder="Minimum 8 characters" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal placeholder:text-charcoal/20 focus:outline-none focus:border-accent transition-colors font-sans" />
-          </div>
-          <div class="space-y-2">
             <label class="text-[10px] uppercase tracking-[0.2em] font-bold text-charcoal/40 ml-1">Account Role</label>
             <select v-model="inviteForm.role" class="w-full bg-transparent border-b border-charcoal/10 py-3 text-charcoal focus:outline-none focus:border-accent transition-colors font-sans cursor-pointer appearance-none">
               <option value="user">Curator</option>
@@ -43,7 +39,7 @@
         </div>
         <button 
           @click="inviteUser" 
-          :disabled="inviting || !inviteForm.email || !inviteForm.password"
+          :disabled="inviting || !inviteForm.email || !inviteForm.name"
           class="px-10 py-4 bg-charcoal text-sand text-[10px] uppercase tracking-[0.3em] font-bold rounded-full hover:bg-accent hover:shadow-lg transition-all duration-500 disabled:opacity-20"
         >
           {{ inviting ? 'Sending...' : 'Send Invitation' }}
@@ -188,7 +184,7 @@ const meetings = ref<Meeting[]>([]);
 const creatingMeeting = ref(false);
 const currentUser = ref<any>(null);
 const inviting = ref(false);
-const inviteForm = ref({ name: '', email: '', password: '', role: 'user' });
+const inviteForm = ref({ name: '', email: '', role: 'user' });
 
 const newMeeting = ref({
   topic: "",
@@ -239,7 +235,7 @@ const inviteUser = async () => {
   try {
     await axios.post('/api/admin/invite', inviteForm.value);
     alert('Curator invited');
-    inviteForm.value = { name: '', email: '', password: '', role: 'user' };
+    inviteForm.value = { name: '', email: '', role: 'user' };
   } catch (e: any) {
     alert(e.response?.data?.error || 'Failed');
   } finally {

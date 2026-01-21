@@ -57,7 +57,7 @@ const adminMiddleware = async (c: any, next: any) => {
 // Global API Protection
 app.use('/api/*', async (c, next) => {
   // Allow login and join confirmation to be public
-  if (c.req.path === '/api/login' || c.req.path === '/api/confirm-join') return next();
+  if (c.req.path === '/api/login' || c.req.path === '/api/confirm-join' || c.req.path === '/api/accept-invitation') return next();
   return authMiddleware(c, next);
 });
 
@@ -614,7 +614,7 @@ function generateConfirmationEmail(name: string, meeting: any, token: string, bo
     <body>
       <div class="container">
         <div class="brand">MoreThan Reading Club</div>
-        <h1>You're Invited</h1>
+        <h1>Invitation</h1>
         <p>Hello ${name}, we are gathering to discuss <strong>${meeting.topic}</strong>. We would be honored to have your perspective at the table.</p>
         
         <div class="meta">
@@ -626,20 +626,16 @@ function generateConfirmationEmail(name: string, meeting: any, token: string, bo
             <span class="meta-label">Where</span>
             ${meeting.location}
           </div>
-          <div class="meta-item">
-            <span class="meta-label">Curator</span>
-            ${meeting.host}
-          </div>
         </div>
 
         ${booksHtml}
 
         <div class="button-container">
-          <a href="${confirmUrl}" class="button">Confirm My Attendance</a>
+          <a href="${confirmUrl}" class="button">Confirm Attendance</a>
         </div>
 
         <div class="footer">
-          One click will instantly add you to the participant list.<br>
+          Clicking the button will instantly confirm your attendance.<br>
           We look forward to the conversation.
         </div>
       </div>
@@ -647,6 +643,40 @@ function generateConfirmationEmail(name: string, meeting: any, token: string, bo
     </html>
   `;
 }
+
+app.post('/api/accept-invitation', async (c) => {
+  try {
+    const db = getDB(c);
+    const { token, password } = await c.req.json();
+    
+    if (!token || !password) return c.json({ error: 'Missing token or password' }, 400);
+
+    const user = await db.query.users.findFirst({
+      where: eq(schema.users.invitationToken, token)
+    });
+
+    if (!user) return c.json({ error: 'Invalid or expired invitation' }, 404);
+
+    // Hash the new password
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hash));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    await db.update(schema.users)
+      .set({ 
+        password: hashHex, 
+        invitationToken: null, 
+        updatedAt: new Date() 
+      })
+      .where(eq(schema.users.id, user.id));
+
+    return c.json({ success: true, message: 'Account activated' });
+  } catch (e) {
+    return c.json({ error: 'Activation failed' }, 500);
+  }
+});
 
 app.post('/api/confirm-join', async (c) => {
   try {
@@ -711,35 +741,75 @@ app.post('/api/meetings/:id/join', async (c) => {
 });
 
 // Auth
+// Helper: Generate Curator Invitation Email (Magic Link)
+function generateCuratorInvitationEmail(name: string, token: string) {
+  const inviteUrl = `https://read.oili.dev/accept-invitation?token=${token}`;
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f8f5f2; color: #2c2c2c; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+        .container { max-width: 600px; margin: 40px auto; background: #ffffff; padding: 48px; border-radius: 24px; border: 1px solid rgba(44,44,44,0.05); box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+        .brand { text-transform: uppercase; letter-spacing: 0.2em; font-size: 11px; font-weight: 800; color: #d97706; margin-bottom: 32px; }
+        h1 { font-family: Georgia, serif; font-size: 36px; margin-bottom: 24px; line-height: 1.1; font-weight: normal; }
+        p { font-size: 18px; line-height: 1.6; margin-bottom: 24px; color: #4a4a4a; }
+        .button-container { text-align: center; margin: 48px 0; }
+        .button { display: inline-block; padding: 20px 40px; background: #2c2c2c; color: #f8f5f2 !important; text-decoration: none; border-radius: 100px; font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.15em; }
+        .footer { margin-top: 48px; font-size: 13px; color: rgba(44,44,44,0.4); text-align: center; line-height: 1.5; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="brand">MoreThan Reading Club</div>
+        <h1>Curator Invitation</h1>
+        <p>Hello ${name},</p>
+        <p>You have been invited to join the <strong>MoreThan Reading Club</strong> as a Curator. As a curator, you will help shape our collection and facilitate our monthly gatherings.</p>
+        
+        <p>Please click the button below to accept your invitation and set up your secure account access.</p>
+
+        <div class="button-container">
+          <a href="${inviteUrl}" class="button">Accept Invitation</a>
+        </div>
+
+        <div class="footer">
+          Welcome to the club.<br>
+          We look forward to your unique perspective.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
 app.post('/api/admin/invite', async (c) => {
   const db = getDB(c);
   const body = await c.req.json();
-  const { email, password, name, role } = body;
+  const { email, name, role } = body;
 
-  if (!email || !password || !name) return c.json({ error: 'Missing fields' }, 400);
+  if (!email || !name) return c.json({ error: 'Missing fields' }, 400);
 
-  // Hash password using Web Crypto
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hash));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  const invitationToken = crypto.randomUUID();
 
   try {
     const user = await db.insert(schema.users).values({
       email,
-      password: hashHex,
       name,
       role: role || 'user',
+      invitationToken,
       createdAt: new Date(),
       updatedAt: new Date()
     }).returning().get();
 
-    // In a real app, send invitation email here
-    await sendEmail(c.env, email, 'Invitation to MoreThan Reading Group', `Hello ${name}, you have been invited. Use your email and the provided password to login.`);
+    // Send styled invitation email with magic link
+    const html = generateCuratorInvitationEmail(name, invitationToken);
+    await sendEmail(c.env, email, 'Invitation to MoreThan Reading Group', `Hello ${name}, you have been invited. Use the link to accept your invitation.`, html);
 
     return c.json({ id: user.id, name: user.name, email: user.email, role: user.role });
   } catch (e) {
+    console.error(e);
     return c.json({ error: 'Invitation failed' }, 400);
   }
 });

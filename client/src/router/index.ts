@@ -8,6 +8,7 @@ import LoginView from '../views/LoginView.vue'
 import BookDetailView from '../views/BookDetailView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import ConfirmJoinView from '../views/ConfirmJoinView.vue'
+import AcceptInvitationView from '../views/AcceptInvitationView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -27,6 +28,11 @@ const router = createRouter({
       path: '/confirm-join',
       name: 'confirm-join',
       component: ConfirmJoinView
+    },
+    {
+      path: '/accept-invitation',
+      name: 'accept-invitation',
+      component: AcceptInvitationView
     },
     {
       path: '/profile',

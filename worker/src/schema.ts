@@ -3,9 +3,10 @@ import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 export const users = sqliteTable('users', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   email: text('email').notNull().unique(),
-  password: text('password').notNull(),
+  password: text('password'), // Nullable initially for invited users
   name: text('name').notNull(),
   role: text('role').notNull().default('user'),
+  invitationToken: text('invitation_token').unique(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(new Date()),
   deletedAt: integer('deleted_at', { mode: 'timestamp' }),
