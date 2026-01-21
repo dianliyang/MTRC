@@ -124,14 +124,33 @@ async function sendEmail(env: Bindings, to: string, subject: string, text: strin
 
 // --- Routes ---
 
+// Helper: Cache Invalidation
+async function purgeCache(c: any, paths: string[]) {
+  const cache = caches.default;
+  for (const path of paths) {
+    const url = new URL(c.req.url);
+    url.pathname = path;
+    await cache.delete(url.toString());
+  }
+}
+
 // Get all books
 app.get('/api/books', async (c) => {
+  const cache = caches.default;
+  const url = c.req.url;
+  const cachedResponse = await cache.match(url);
+  if (cachedResponse) return cachedResponse;
+
   try {
     const db = getDB(c);
     const result = await db.query.books.findMany({
       orderBy: [desc(schema.books.createdAt)],
     });
-    return c.json(result);
+    const response = c.json(result);
+    // Cache for 5 minutes
+    response.headers.set('Cache-Control', 'public, max-age=300');
+    c.executionCtx.waitUntil(cache.put(url, response.clone()));
+    return response;
   } catch (e) {
     return c.json({ error: 'Failed to fetch books' }, 500);
   }
@@ -139,6 +158,11 @@ app.get('/api/books', async (c) => {
 
 // Get single book
 app.get('/api/books/:id', async (c) => {
+  const cache = caches.default;
+  const url = c.req.url;
+  const cachedResponse = await cache.match(url);
+  if (cachedResponse) return cachedResponse;
+
   try {
     const db = getDB(c);
     const id = parseInt(c.req.param('id'));
@@ -148,7 +172,11 @@ app.get('/api/books/:id', async (c) => {
       where: eq(schema.books.id, id),
     });
     if (!result) return c.json({ error: 'Book not found' }, 404);
-    return c.json(result);
+    
+    const response = c.json(result);
+    response.headers.set('Cache-Control', 'public, max-age=300');
+    c.executionCtx.waitUntil(cache.put(url, response.clone()));
+    return response;
   } catch (e) {
     return c.json({ error: 'Failed to fetch book' }, 500);
   }
@@ -186,6 +214,9 @@ app.post('/api/books', adminMiddleware, async (c) => {
       updatedAt: new Date(),
     }).returning().get();
 
+    // Invalidate books cache
+    c.executionCtx.waitUntil(purgeCache(c, ['/api/books']));
+
     return c.json(newItem);
   } catch (e) {
     return c.json({ error: 'Failed to add book' }, 500);
@@ -210,6 +241,10 @@ app.delete('/api/books/:id', authMiddleware, async (c) => {
     }
 
     await db.delete(schema.books).where(eq(schema.books.id, id));
+    
+    // Invalidate cache
+    c.executionCtx.waitUntil(purgeCache(c, ['/api/books', `/api/books/${id}`]));
+    
     return c.json({ success: true });
   } catch (e) {
     return c.json({ error: 'Failed to delete book' }, 500);
@@ -236,6 +271,9 @@ app.post('/api/books/select', adminMiddleware, async (c) => {
       .returning().get();
 
     if (!updated) return c.json({ error: 'Book not found' }, 404);
+
+    // Invalidate cache
+    c.executionCtx.waitUntil(purgeCache(c, ['/api/books', `/api/books/${id}`]));
 
     // Notify
     const subs = await db.query.subscribers.findMany();
@@ -405,10 +443,15 @@ app.post('/api/books/:id/toggle-like', async (c) => {
 
 // Meetings
 app.get('/api/meetings', async (c) => {
+  const cache = caches.default;
+  const url = c.req.url;
+  const cachedResponse = await cache.match(url);
+  if (cachedResponse) return cachedResponse;
+
   try {
     const db = getDB(c);
     const payload = c.get('jwtPayload');
-    const isAdmin = payload?.role === 'admin';
+    const isAdmin = payload?.role === 'admin' || payload?.role === 'curator';
     
     // Drizzle relationship fetching
     const results = await db.query.meetings.findMany({
@@ -416,8 +459,6 @@ app.get('/api/meetings', async (c) => {
       orderBy: [desc(schema.meetings.date)],
     });
 
-    // For complex relations like Many-to-Many in Drizzle/D1, manual queries are often safer or more explicit
-    // fetching books for each meeting
     const meetingsWithDetails = await Promise.all(results.map(async (m) => {
       // Get books
       const mb = await db.select({ bookId: schema.meetingBooks.bookId })
@@ -448,7 +489,13 @@ app.get('/api/meetings', async (c) => {
       };
     }));
 
-    return c.json(meetingsWithDetails);
+    const response = c.json(meetingsWithDetails);
+    // Cache for 5 minutes for non-admins
+    if (!isAdmin) {
+      response.headers.set('Cache-Control', 'public, max-age=300');
+      c.executionCtx.waitUntil(cache.put(url, response.clone()));
+    }
+    return response;
   } catch (e) {
     console.error(e);
     return c.json({ error: 'Failed to fetch meetings' }, 500);
@@ -456,6 +503,11 @@ app.get('/api/meetings', async (c) => {
 });
 
 app.get('/api/meetings/:id', async (c) => {
+  const cache = caches.default;
+  const url = c.req.url;
+  const cachedResponse = await cache.match(url);
+  if (cachedResponse) return cachedResponse;
+
   try {
     const db = getDB(c);
     const id = parseInt(c.req.param('id'));
@@ -465,7 +517,9 @@ app.get('/api/meetings/:id', async (c) => {
     if (!meeting) return c.json({ error: 'Not found' }, 404);
 
     const payload = c.get('jwtPayload');
-    if (!meeting.publishedAt && payload?.role !== 'admin') {
+    const isAdmin = payload?.role === 'admin' || payload?.role === 'curator';
+
+    if (!meeting.publishedAt && !isAdmin) {
       return c.json({ error: 'Meeting is not yet published' }, 403);
     }
 
@@ -487,11 +541,18 @@ app.get('/api/meetings/:id', async (c) => {
       )
     });
 
-    return c.json({
+    const result = {
       ...meeting,
       Books: books,
       Participants: parts
-    });
+    };
+
+    const response = c.json(result);
+    if (meeting.publishedAt && !isAdmin) {
+      response.headers.set('Cache-Control', 'public, max-age=300');
+      c.executionCtx.waitUntil(cache.put(url, response.clone()));
+    }
+    return response;
   } catch (e) {
     return c.json({ error: 'Failed to fetch meeting' }, 500);
   }
@@ -520,6 +581,9 @@ app.post('/api/meetings', adminMiddleware, async (c) => {
         });
       }
     }
+
+    // Invalidate meetings cache
+    c.executionCtx.waitUntil(purgeCache(c, ['/api/meetings']));
 
     return c.json(newMeeting);
   } catch (e) {
@@ -555,6 +619,9 @@ app.post('/api/meetings/:id/publish', adminMiddleware, async (c) => {
     await db.update(schema.meetings)
       .set({ publishedAt: new Date(), updatedAt: new Date() })
       .where(eq(schema.meetings.id, id));
+
+    // Invalidate cache
+    c.executionCtx.waitUntil(purgeCache(c, ['/api/meetings', `/api/meetings/${id}`]));
 
     // Send Invitations
     c.executionCtx.waitUntil((async () => {
@@ -614,6 +681,9 @@ app.delete('/api/meetings/:id', adminMiddleware, async (c) => {
     // Perform deletion - cascading handles meeting_books and participants
     await db.delete(schema.meetings).where(eq(schema.meetings.id, id));
     
+    // Invalidate cache
+    c.executionCtx.waitUntil(purgeCache(c, ['/api/meetings', `/api/meetings/${id}`]));
+
     return c.json({ success: true, message: 'Event cancelled and removed' });
   } catch (e) {
     return c.json({ error: 'Failed to delete meeting' }, 500);

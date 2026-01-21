@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
 
 export const users = sqliteTable('users', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -28,14 +28,18 @@ export const books = sqliteTable('books', {
   likesCount: integer('likes_count').notNull().default(0),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(new Date()),
-});
+}, (table) => ({
+  statusIdx: index('status_idx').on(table.status),
+}));
 
 export const likes = sqliteTable('likes', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
   bookId: integer('book_id').references(() => books.id, { onDelete: 'cascade' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date()),
-});
+}, (table) => ({
+  userBookIdx: index('user_book_idx').on(table.userId, table.bookId),
+}));
 
 export const comments = sqliteTable('comments', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -44,7 +48,9 @@ export const comments = sqliteTable('comments', {
   bookId: integer('book_id').references(() => books.id, { onDelete: 'cascade' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(new Date()),
-});
+}, (table) => ({
+  bookIdIdx: index('book_idx').on(table.bookId),
+}));
 
 export const subscribers = sqliteTable('subscribers', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -64,7 +70,10 @@ export const meetings = sqliteTable('meetings', {
   publishedAt: integer('published_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(new Date()),
-});
+}, (table) => ({
+  publishedAtIdx: index('published_at_idx').on(table.publishedAt),
+  dateIdx: index('date_idx').on(table.date),
+}));
 
 export const participants = sqliteTable('participants', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -75,9 +84,13 @@ export const participants = sqliteTable('participants', {
   meetingId: integer('meeting_id').references(() => meetings.id, { onDelete: 'cascade' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(new Date()),
-});
+}, (table) => ({
+  meetingIdx: index('meeting_idx').on(table.meetingId),
+}));
 
 export const meetingBooks = sqliteTable('meeting_books', {
   meetingId: integer('meeting_id').references(() => meetings.id, { onDelete: 'cascade' }),
   bookId: integer('book_id').references(() => books.id, { onDelete: 'cascade' }),
-});
+}, (table) => ({
+  pk: index('meeting_book_idx').on(table.meetingId, table.bookId),
+}));
