@@ -33,7 +33,7 @@
         >
           <!-- Optional Book Cover Background (Blur) - Use first book -->
           <div v-if="meeting.Books && meeting.Books.length > 0" class="absolute top-0 right-0 w-32 h-32 opacity-10 translate-x-8 -translate-y-8 blur-sm pointer-events-none">
-            <img :src="proxyImage(meeting.Books[0].coverUrl)" class="w-full h-full object-cover rounded-full" />
+            <img :src="meeting.Books[0].coverUrl" class="w-full h-full object-cover rounded-full" />
           </div>
 
           <div class="relative z-10 flex gap-6">
@@ -45,7 +45,7 @@
                 class="w-16 h-24 shadow-md transition-transform hover:translate-x-2"
                 :style="{ zIndex: 10 - i, transform: `rotate(${i % 2 === 0 ? 3 : -2}deg)` }"
               >
-                <img :src="proxyImage(book.coverUrl)" class="w-full h-full object-cover border border-white" :alt="book.title" />
+                <img :src="book.coverUrl" class="w-full h-full object-cover border border-white" :alt="book.title" />
               </div>
             </div>
 
@@ -96,7 +96,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
-import { isFuture, formatDate, formatTime, proxyImage } from '../utils';
+import { isFuture, formatDate, formatTime } from '../utils';
 import type { Meeting } from '../types';
 
 const meetings = ref<Meeting[]>([]);

@@ -44,7 +44,7 @@
             <h2 class="font-serif text-2xl text-charcoal mb-6">Subject Matter</h2>
             <div class="grid grid-cols-1 gap-8">
               <div v-for="book in meeting.Books" :key="book.id" class="flex gap-6 group">
-                <img :src="proxyImage(book.coverUrl)" class="w-20 h-32 object-cover rounded shadow-md group-hover:scale-105 transition-transform duration-500" />
+                <img :src="book.coverUrl" class="w-20 h-32 object-cover rounded shadow-md group-hover:scale-105 transition-transform duration-500" />
                 <div>
                   <h3 class="font-serif font-bold text-xl text-charcoal mb-1">{{ book.title }}</h3>
                   <p class="text-sm text-charcoal/60 mb-2">{{ formatAuthors(book.authors) }}</p>
@@ -107,7 +107,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
-import { formatDate, formatTime, isFuture, formatAuthors, proxyImage } from '../utils';
+import { formatDate, formatTime, isFuture, formatAuthors } from '../utils';
 import type { Meeting } from '../types';
 
 const route = useRoute();
