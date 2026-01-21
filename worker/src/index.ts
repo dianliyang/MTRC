@@ -227,10 +227,20 @@ app.post('/api/books/select', adminMiddleware, async (c) => {
 
     // Notify
     const subs = await db.query.subscribers.findMany();
-    const emails = subs.filter(s => s.email).map(s => s.email as string);
+    const allUsers = await db.query.users.findMany({
+      where: isNull(schema.users.deletedAt)
+    });
+    const payload = c.get('jwtPayload');
+    const currentUserId = payload?.id;
+
+    const emailSet = new Set<string>();
+    subs.forEach(s => s.email && emailSet.add(s.email.toLowerCase()));
+    allUsers.forEach(u => u.email && u.id !== currentUserId && emailSet.add(u.email.toLowerCase()));
+    
+    const emails = Array.from(emailSet);
     const phones = subs.filter(s => s.phoneNumber).map(s => s.phoneNumber as string);
 
-    // Email Stub
+    // Email
     if (emails.length > 0) {
       await sendEmail(c.env, emails.join(','), `New Book: ${updated.title}`, `We are reading ${updated.title}`);
     }
@@ -533,20 +543,42 @@ app.post('/api/meetings/:id/publish', adminMiddleware, async (c) => {
     // Send Invitations
     c.executionCtx.waitUntil((async () => {
       const subs = await db.query.subscribers.findMany();
+      const allUsers = await db.query.users.findMany({
+        where: isNull(schema.users.deletedAt)
+      });
+      const payload = c.get('jwtPayload');
+      const currentUserId = payload?.id;
+
+      // Map to track unique emails and prefer User name over Subscriber email prefix
+      const recipients = new Map<string, { email: string, name: string }>();
+
       for (const sub of subs) {
-        if (!sub.email) continue;
+        if (sub.email) {
+          const email = sub.email.toLowerCase();
+          recipients.set(email, { email: sub.email, name: sub.email.split('@')[0] });
+        }
+      }
+
+      for (const u of allUsers) {
+        if (u.email && u.id !== currentUserId) {
+          const email = u.email.toLowerCase();
+          recipients.set(email, { email: u.email, name: u.name });
+        }
+      }
+
+      for (const recipient of recipients.values()) {
         const token = crypto.randomUUID();
         await db.insert(schema.participants).values({
           meetingId: id,
-          name: sub.email.split('@')[0],
-          email: sub.email,
+          name: recipient.name,
+          email: recipient.email,
           status: 'pending',
           confirmationToken: token,
           createdAt: new Date(),
           updatedAt: new Date()
         });
-        const html = generateConfirmationEmail(sub.email.split('@')[0], meeting, token, relatedBooks);
-        await sendEmail(c.env, sub.email, `Invitation: ${meeting.topic}`, `You are invited to our next gathering`, html);
+        const html = generateConfirmationEmail(recipient.name, meeting, token, relatedBooks);
+        await sendEmail(c.env, recipient.email, `Invitation: ${meeting.topic}`, `You are invited to our next gathering`, html);
       }
     })());
 
