@@ -1,5 +1,31 @@
-# Vue 3 + Vite
+# MoreThan Reading Club - Client
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+The frontend application for the MoreThan Reading Club.
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+## Technology Stack
+
+- **Framework:** Vue 3
+- **Build Tool:** Vite
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **PWA:** Yes (via `vite-plugin-pwa`)
+
+## Development
+
+See the root [README](../README.md) for full setup instructions.
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+## Production Build
+
+```bash
+npm run build
+```
+
+This generates the production assets in `dist/`.
