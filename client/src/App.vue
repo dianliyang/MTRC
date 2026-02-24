@@ -206,7 +206,7 @@ const logout = () => {
   position: fixed;
   left: 1.5rem;
   right: 1.5rem;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 0.4rem);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 0.15rem);
   z-index: 50;
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
