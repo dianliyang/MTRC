@@ -129,7 +129,7 @@ const logout = () => {
     </nav>
 
     <!-- Mobile Bottom Navigation -->
-    <nav class="fixed bottom-6 left-6 right-6 z-50 md:hidden backdrop-blur-3xl rounded-full">
+    <nav class="mobile-bottom-nav md:hidden backdrop-blur-3xl rounded-full">
       <div class="bg-charcoal/70 border border-white/10 rounded-full p-1.5 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
         <RouterLink 
           to="/" 
@@ -202,6 +202,17 @@ const logout = () => {
 </template>
 
 <style>
+.mobile-bottom-nav {
+  position: fixed;
+  left: 1.5rem;
+  right: 1.5rem;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 0.4rem);
+  z-index: 50;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
